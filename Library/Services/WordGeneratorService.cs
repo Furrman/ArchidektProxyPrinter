@@ -31,8 +31,8 @@ public class WordGeneratorService(ILogger<WordGeneratorService> logger, Scryfall
 
             var paragraph = document.AddParagraph();
 
-            int step = 0;
             int count = deck.Cards.SelectMany(c => c.CardSides).Count();
+            int step = UpdateStep(0, count);
 
             foreach (var card in deck.Cards)
             {
@@ -92,12 +92,11 @@ public class WordGeneratorService(ILogger<WordGeneratorService> logger, Scryfall
 
     private int UpdateStep(int step, int count)
     {
-        step++;
         var percent = (double)step / count * 100;
         GenerateWordProgress?.Invoke(this, new GenerateWordProgressEventArgs
         {
             Percent = percent
         });
-        return step;
+        return ++step;
     }
 }

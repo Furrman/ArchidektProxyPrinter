@@ -7,6 +7,7 @@ using ConsoleApp.Configuration;
 using Library;
 using Library.Services;
 using Library.Models.Events;
+using DownloadMTGCards.Helpers;
 
 namespace ConsoleApp;
 
@@ -68,19 +69,26 @@ internal class Program
     {
         if (e.Percent is not null)
         {
-            var stageInfo = e.Stage switch
+            if (e.Percent == 0)
             {
-                CreateMagicDeckDocumentStageEnum.GetDeckDetails => "Get deck details: ",
-                CreateMagicDeckDocumentStageEnum.SaveToDocument => "Download images: ",
-                _ => string.Empty
-            };
-            Console.WriteLine($"{stageInfo}{e.Percent:F1}%");
+                var stageInfo = e.Stage switch
+                {
+                    CreateMagicDeckDocumentStageEnum.GetDeckDetails => "(1/2) Get deck details",
+                    CreateMagicDeckDocumentStageEnum.SaveToDocument => "(2/2) Download images",
+                    _ => string.Empty
+                };
+                if (e.Stage > 0)
+                {
+                    Console.WriteLine();
+                }
+                Console.WriteLine(stageInfo);
+            }
+            ConsoleUtility.WriteProgressBar((int)e.Percent, true);
         }
+
         if (e.ErrorMessage is not null)
         {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine(e.ErrorMessage);
-            Console.ResetColor();
+            ConsoleUtility.WriteErrorMessage(e.ErrorMessage);
         }
     }
 }

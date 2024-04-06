@@ -137,8 +137,8 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
     {
         try
         {
-            int step = 0;
             int count = cards.Count();
+            int step = UpdateStep(0, count);
             foreach (var card in cards)
             {
                 var images = await GetCardImageUrls(card.Name);
@@ -201,12 +201,11 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
 
     private int UpdateStep(int step, int count)
     {
-        step++;
         var percent = (double)step / count * 100;
         GetDeckDetailsProgress?.Invoke(this, new GetDeckDetailsProgressEventArgs
         {
             Percent = percent
         });
-        return step;
+        return ++step;
     }
 }
