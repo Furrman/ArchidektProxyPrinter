@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "DownloadMTGCards": {
+    "ArchidektProxyPrinter": {
       "commandName": "Project",
       "commandLineArgs": ""
     }
