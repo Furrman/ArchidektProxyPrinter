@@ -1,6 +1,6 @@
 ﻿namespace Library.Models.Events;
 
-public class UpdateProgressEventArgs : EventArgs
+public class GenerateWordProgressEventArgs : EventArgs
 {
     public double? Percent { get; set; }
     public string? ErrorMessage { get; set; }

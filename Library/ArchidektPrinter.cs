@@ -5,20 +5,29 @@ using Library.Services;
 
 namespace Library;
 
-public class ArchidektPrinter(
-    DeckService deckService,
-    CardListFileParser fileParser,
-    WordGenerator wordGenerator,
-    FileManager fileManager
-        )
+public class ArchidektPrinter
 {
     public event EventHandler<UpdateProgressEventArgs>? ProgressUpdate;
 
-    private readonly DeckService _deckService = deckService;
-    private readonly CardListFileParser _fileParser = fileParser;
-    private readonly WordGenerator _wordGenerator = wordGenerator;
-    private readonly FileManager _fileManager = fileManager;
+    private readonly MagicCardService _magicCardService;
+    private readonly WordGeneratorService _wordGeneratorService;
+    private readonly FileManager _fileManager;
+    private readonly CardListFileParser _fileParser;
 
+    public ArchidektPrinter(
+        MagicCardService magicCardService,
+        WordGeneratorService wordGeneratorService,
+        FileManager fileManager,
+        CardListFileParser fileParser
+        )
+    {
+        _magicCardService = magicCardService;
+        _wordGeneratorService = wordGeneratorService;
+        _fileManager = fileManager;
+        _fileParser = fileParser;
+
+        _wordGeneratorService.GenerateWordProgress += UpdateGenerateWordStep;
+    }
 
     public async Task GenerateWord(int? deckId = null, string? inputFilePath = null, string? outputPath = null, string? outputFileName = null, bool saveImages = false)
     {
@@ -29,7 +38,7 @@ public class ArchidektPrinter(
 
     public async Task GenerateWord(int deckId, string? outputPath = null, string? outputFileName = null, bool saveImages = false)
     {
-        var deckDetails = await _deckService.GetDeckWithCardPrintDetails(deckId);
+        var deckDetails = await _magicCardService.GetDeckWithCardPrintDetails(deckId);
         if (deckDetails is null)
         {
             RaiseError("Getting deck details returned error");
@@ -46,42 +55,18 @@ public class ArchidektPrinter(
     }
 
 
-    private async Task GenerateWord(DeckDetailsDTO deckDetails, string? outputPath = null, string? outputFileName = null, bool saveImages = false)
+    private async Task GenerateWord(DeckDetailsDTO deck, string? outputPath = null, string? outputFileName = null, bool saveImages = false)
     {
-        var outputFolder = _fileManager.CreateOutputFolder(outputPath);
-        var wordFilePath = _fileManager.ReturnCorrectWordFilePath(outputPath, outputFileName);
-
-        double step = 1;
-        double count = deckDetails.Cards.SelectMany(c => c.Value.ImageUrls).Count();
-        if (count == 0)
+        if (deck.Cards.Count == 0)
         {
             RaiseError("Empty deck list");
             return;
         }
 
-        await _wordGenerator.GenerateWord(wordFilePath, async (doc) =>
-        {
-            var paragraph = doc.AddParagraph();
-            foreach (var card in deckDetails.Cards)
-            {
-                foreach (var entry in card.Value.ImageUrls)
-                {
-                    var imageContent = await _deckService.GetImage(entry.Value);
-                    if (imageContent == null)
-                    {
-                        step = UpdateStep(step, count);
-                        continue;
-                    }
-                    if (saveImages)
-                    {
-                        await _fileManager.CreateImageFile(imageContent, outputFolder, entry.Key);
-                    }
+        outputPath = _fileManager.CreateOutputFolder(outputPath);
+        var wordFilePath = _fileManager.ReturnCorrectWordFilePath(outputPath, outputFileName);
 
-                    _wordGenerator.AddImageToWord(paragraph, entry.Key, imageContent, card.Value.Quantity);
-                    step = UpdateStep(step, count);
-                }
-            }
-        });
+        await _wordGeneratorService.GenerateWord(deck, outputPath, wordFilePath, saveImages);
     }
 
 
@@ -93,14 +78,23 @@ public class ArchidektPrinter(
         });
     }
 
-    private double UpdateStep(double step, double count)
+    private void UpdateGetDeckDetails(object? sender, GetDeckDetailsProgressEventArgs e)
     {
-        step++;
-        var percent = step / count * 100;
         ProgressUpdate?.Invoke(this, new UpdateProgressEventArgs
         {
-            Percent = percent
+            Stage = CreateMagicDeckDocumentStageEnum.GetDeckDetails,
+            Percent = e.Percent,
+            ErrorMessage = e.ErrorMessage
         });
-        return step;
+    }
+
+    private void UpdateGenerateWordStep(object? sender, GenerateWordProgressEventArgs e)
+    {
+        ProgressUpdate?.Invoke(this, new UpdateProgressEventArgs
+        {
+            Stage = CreateMagicDeckDocumentStageEnum.SaveToDocument,
+            Percent = e.Percent,
+            ErrorMessage = e.ErrorMessage
+        });
     }
 }

@@ -38,8 +38,8 @@ internal class Program
             }
             else if (deckUrl is not null)
             {
-                var deckService = serviceProvider.GetService<DeckService>()!;
-                if (!deckService.TryExtractDeckIdFromUrl(args[0], out var urlDeckId) || urlDeckId <= 0)
+                var magicCardService = serviceProvider.GetService<MagicCardService>()!;
+                if (!magicCardService.TryExtractDeckIdFromUrl(args[0], out var urlDeckId) || urlDeckId <= 0)
                 {
                     Console.WriteLine("You have to specify correct URL to your deck hosted by Archidekt.");
                     return;

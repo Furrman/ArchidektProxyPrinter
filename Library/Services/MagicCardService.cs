@@ -6,9 +6,9 @@ using System.Text.RegularExpressions;
 
 namespace Library.Services;
 
-public class DeckService(ILogger<DeckService> logger, ArchidektApiClient archidektApiClient, ScryfallApiClient scryfallApiClient)
+public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClient archidektApiClient, ScryfallApiClient scryfallApiClient)
 {
-    private readonly ILogger<DeckService> _logger = logger;
+    private readonly ILogger<MagicCardService> _logger = logger;
     private readonly ArchidektApiClient _archidektApiClient = archidektApiClient;
     private readonly ScryfallApiClient _scryfallApiClient = scryfallApiClient;
 
@@ -36,14 +36,11 @@ public class DeckService(ILogger<DeckService> logger, ArchidektApiClient archide
         return deck;
     }
 
-    // TODO Refactor this to separate service
-    public async Task<byte[]?> GetImage(string url) => await _scryfallApiClient.GetImage(url);
-
-    public async Task DownloadCards(Dictionary<string, CardEntryDTO> cards, string outputPath)
+    public async Task DownloadDeckCards(DeckDetailsDTO deck, string outputPath)
     {
         try
         {
-            foreach (var card in cards)
+            foreach (var card in deck.Cards)
             {
                 var cardData = card.Value;
                 var images = await _scryfallApiClient.GetCardImageUrlsFromScryfall(cardData.Name);
@@ -51,7 +48,7 @@ public class DeckService(ILogger<DeckService> logger, ArchidektApiClient archide
                 {
                     foreach (var image in images)
                     {
-                        await DownloadImage(image.Value, outputPath, cardData.Name, cardData.Quantity);
+                        await DownloadCardSideImage(image.Value, outputPath, cardData.Name, cardData.Quantity);
                     }
                 }
             }
@@ -62,8 +59,7 @@ public class DeckService(ILogger<DeckService> logger, ArchidektApiClient archide
         }
     }
 
-    // TODO Refactor this to separate service
-    public async Task DownloadImage(string imageUrl, string folderPath, string filename, int quantity)
+    public async Task DownloadCardSideImage(string imageUrl, string folderPath, string filename, int quantity)
     {
         try
         {
@@ -82,6 +78,8 @@ public class DeckService(ILogger<DeckService> logger, ArchidektApiClient archide
             _logger.LogError(ex, "Error in downloading image from the Scryfall");
         }
     }
+
+    public async Task<byte[]?> GetImage(string url) => await _scryfallApiClient.GetImage(url);
 
     public bool TryExtractDeckIdFromUrl(string url, out int deckId)
     {
