@@ -1,4 +1,6 @@
-﻿using ConsoleApp.Configuration;
+﻿using CoconoaApp = Cocona.CoconaLiteApp;
+using CoconoaOptions = Cocona.OptionAttribute;
+using ConsoleApp.Configuration;
 using Library;
 using Library.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,44 +13,52 @@ internal class Program
     {
         var serviceProvider = DependencyInjectionConfigurator.Setup();
 
-        if (args.Length < 1)
+        CoconoaApp.Run(([CoconoaOptions(Description = "Filepath to exported deck from Archidekt")] string? deckFilePath,
+            [CoconoaOptions(Description = "ID of the deck in Archidekt")] int? deckId,
+            [CoconoaOptions(Description = "URL link to deck in Archidekt")]string? deckUrl,
+            [CoconoaOptions(Description = "Directory path to output file(s)")]string? outputPath,
+            [CoconoaOptions(Description = "Filename of the output word file")]string? outputFileName,
+            [CoconoaOptions(Description = "Flag to store original images in the same folder as output file")] bool storeOriginalImages = false) =>
         {
-            Console.WriteLine(@"You have to provide at least one from this list:
-            - path to exported deck
-            - deck id
-            - url to your deck.");
-            return;
-        }
+            if (deckFilePath is not null)
+            {
+                if (!Path.Exists(deckFilePath))
+                {
+                    Console.WriteLine("You have to specify correct PATH to your card list exported from Archidekt.");
+                    return;
+                }
+            }
+            else if (deckId is not null)
+            {
+                if (deckId <= 0)
+                {
+                    Console.WriteLine("You have to specify correct ID of your deck in Archidekt.");
+                    return;
+                }
+            }
+            else if (deckUrl is not null)
+            {
+                var deckService = serviceProvider.GetService<DeckService>()!;
+                if (!deckService.TryExtractDeckIdFromUrl(args[0], out var urlDeckId) || urlDeckId <= 0)
+                {
+                    Console.WriteLine("You have to specify correct URL to your deck hosted by Archidekt.");
+                    return;
+                }
+                deckId = urlDeckId;
+            }
+            else
+            {
+                Console.WriteLine(@"You have to provide at least one from this list:
+                - path to exported deck
+                - deck id
+                - url to your deck.");
+                return;
+            }
 
-        var deckService = serviceProvider.GetService<DeckService>()!;
-
-        int deckId = 0;
-        string? inputFilePath = null;
-        if (Path.Exists(args[0]))
-        {
-            inputFilePath = args[0];
-        }
-        else
-        {
-            int.TryParse(args[0], out deckId);
-            if (deckId == 0) deckService.TryExtractDeckIdFromUrl(args[0], out deckId);
-        }
-        if (deckId == 0)
-        {
-            Console.WriteLine("You have to specify correct ID of your deck in Archidekt or path to your card list exported from Archidekt.");
-            return;
-        }
-
-        var outputDirectoryPath = args.Length > 1 ? args[1] : null;
-        var wordFilePath = args.Length > 2 ? args[2] : null;
-
-        var archidektPrinter = serviceProvider.GetService<ArchidektPrinter>()!;
-        archidektPrinter.ProgressUpdate += UpdateProgressOnConsole;
-
-        // Version with storing images and word
-        //archidektPrinter.SaveImagesAndGenerateWord(deckId, inputFilePath, outputDirectoryPath, wordFilePath).Wait();
-        // Version with saving just a word
-        archidektPrinter.GenerateWord(deckId, outputDirectoryPath, wordFilePath).Wait();
+            var archidektPrinter = serviceProvider.GetService<ArchidektPrinter>()!;
+            archidektPrinter.ProgressUpdate += UpdateProgressOnConsole;
+            archidektPrinter.GenerateWord(deckId, deckFilePath, outputPath, outputFileName, storeOriginalImages).Wait();
+        });
     }
 
     private static void UpdateProgressOnConsole(object? sender, Library.Models.Events.UpdateProgressEventArgs e)

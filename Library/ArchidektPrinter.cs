@@ -1,5 +1,4 @@
-﻿using Library.Clients;
-using Library.IO;
+﻿using Library.IO;
 using Library.Models.DTO;
 using Library.Models.Events;
 using Library.Services;
@@ -19,9 +18,16 @@ public class ArchidektPrinter(
     private readonly CardListFileParser _fileParser = fileParser;
     private readonly WordGenerator _wordGenerator = wordGenerator;
     private readonly FileManager _fileManager = fileManager;
-    
 
-    public async Task SaveImages(int deckId, string? outputPath)
+
+    public async Task GenerateWord(int? deckId = null, string? inputFilePath = null, string? outputPath = null, string? outputFileName = null, bool saveImages = false)
+    {
+        if (deckId != 0) await GenerateWord(deckId!.Value, outputPath, outputFileName, saveImages);
+        else if (inputFilePath != null) await GenerateWord(inputFilePath, outputPath, outputFileName, saveImages);
+        else throw new ArgumentException("DeckId has to be bigger than 0 or WordFilePath has to be corrected");
+    }
+
+    public async Task GenerateWord(int deckId, string? outputPath = null, string? outputFileName = null, bool saveImages = false)
     {
         var deckDetails = await _deckService.GetDeckWithCardPrintDetails(deckId);
         if (deckDetails is null)
@@ -30,86 +36,23 @@ public class ArchidektPrinter(
             return;
         }
 
-        await SaveImages(deckDetails.Cards, outputPath);
+        await GenerateWord(deckDetails, outputPath, outputFileName ?? deckDetails.Name, saveImages);
     }
 
-    public async Task SaveImages(string deckListFilePath, string? outputPath)
+    public async Task GenerateWord(string deckListFilePath, string? outputPath = null, string? outputFileName = null, bool saveImages = false)
     {
-        outputPath = _fileManager.CreateOutputFolder(outputPath);
-
-        var cardList = _fileParser.GetCardList(deckListFilePath);
-        await SaveImages(cardList, outputPath);
-    }
-
-    public async Task SaveImagesAndGenerateWord(int deckId, string? outputPath, string? wordFilePath)
-    {
-        var deckDetails = await _deckService.GetDeckWithCardPrintDetails(deckId);
-        if (deckDetails is null)
-        {
-            RaiseError("Getting deck details returned error");
-            return;
-        }
-
-        await SaveImagesAndGenerateWord(deckDetails.Cards, outputPath, wordFilePath, deckDetails.Name);
-    }
-
-    public async Task SaveImagesAndGenerateWord(string deckListFilePath, string? outputPath, string? wordFilePath)
-    {
-        var cardList = _fileParser.GetCardList(deckListFilePath);
-        await SaveImagesAndGenerateWord(cardList, outputPath, wordFilePath);
-    }
-
-    public async Task SaveImagesAndGenerateWord(int deckId, string? deckListFilePath, string? outputPath, string? wordFilePath)
-    {
-        if (deckId != 0) await SaveImagesAndGenerateWord(deckId, outputPath, wordFilePath);
-        else if (deckListFilePath != null) await SaveImagesAndGenerateWord(deckListFilePath, outputPath, wordFilePath);
-        else throw new ArgumentException("DeckId has to be bigger than 0 or DeckListFilePath has to be correcet");
-    }
-
-    public async Task GenerateWord(int deckId, string? wordFilePath)
-    {
-        var deckDetails = await _deckService.GetDeckWithCardPrintDetails(deckId);
-        if (deckDetails is null)
-        {
-            RaiseError("Getting deck details returned error");
-            return;
-        }
-
-        await GenerateWord(deckDetails.Cards, wordFilePath, deckDetails.Name);
-    }
-
-    public async Task GenerateWord(string deckListFilePath, string? wordFilePath)
-    {
-        var cardList = _fileParser.GetCardList(deckListFilePath);
-        await GenerateWord(cardList, wordFilePath);
-    }
-
-    public async Task GenerateWord(int deckId, string? deckListFilePath, string? wordFilePath)
-    {
-        if (deckId != 0) await GenerateWord(deckId, wordFilePath);
-        else if (deckListFilePath != null) await GenerateWord(deckListFilePath, wordFilePath);
-        else throw new ArgumentException("DeckId has to be bigger than 0 or WordFilePath has to be correcet");
-    }
-
-    public void GenerateWordFromSavedImages(string imageFolderPath, string? wordFilePath)
-    {
-        if (!_fileManager.DirectoryExists(imageFolderPath))
-        {
-            throw new ArgumentException("ImageFolderPath has to be correct path to folder with card images");
-        }
-        wordFilePath = _fileManager.ReturnCorrectFilePath(wordFilePath);
-        
-        _wordGenerator.GenerateWord(imageFolderPath, wordFilePath!);
+        var cardList = _fileParser.GetDeckFromFile(deckListFilePath);
+        await GenerateWord(cardList, outputPath, outputFileName, saveImages);
     }
 
 
-    private async Task GenerateWord(Dictionary<string, CardEntryDTO> cardList, string? wordFilePath, string? deckName = null)
+    private async Task GenerateWord(DeckDetailsDTO deckDetails, string? outputPath = null, string? outputFileName = null, bool saveImages = false)
     {
-        wordFilePath = _fileManager.ReturnCorrectFilePath(wordFilePath, deckName);
-        _fileManager.CreateOutputFolder(Path.GetDirectoryName(wordFilePath));
+        var outputFolder = _fileManager.CreateOutputFolder(outputPath);
+        var wordFilePath = _fileManager.ReturnCorrectWordFilePath(outputPath, outputFileName);
 
-        double step = 1; 
-        double count = cardList.SelectMany(c => c.Value.ImageUrls).Count();
+        double step = 1;
+        double count = deckDetails.Cards.SelectMany(c => c.Value.ImageUrls).Count();
         if (count == 0)
         {
             RaiseError("Empty deck list");
@@ -119,7 +62,7 @@ public class ArchidektPrinter(
         await _wordGenerator.GenerateWord(wordFilePath, async (doc) =>
         {
             var paragraph = doc.AddParagraph();
-            foreach (var card in cardList)
+            foreach (var card in deckDetails.Cards)
             {
                 foreach (var entry in card.Value.ImageUrls)
                 {
@@ -129,6 +72,11 @@ public class ArchidektPrinter(
                         step = UpdateStep(step, count);
                         continue;
                     }
+                    if (saveImages)
+                    {
+                        await _fileManager.CreateImageFile(imageContent, outputFolder, entry.Key);
+                    }
+
                     _wordGenerator.AddImageToWord(paragraph, entry.Key, imageContent, card.Value.Quantity);
                     step = UpdateStep(step, count);
                 }
@@ -136,21 +84,6 @@ public class ArchidektPrinter(
         });
     }
 
-    private async Task SaveImages(Dictionary<string, CardEntryDTO> cardList, string? outputPath)
-    {
-        outputPath = _fileManager.CreateOutputFolder(outputPath);
-
-        await _deckService.DownloadCards(cardList, outputPath!);
-    }
-
-    private async Task SaveImagesAndGenerateWord(Dictionary<string, CardEntryDTO> cardList, string? imageOutputPath, string? wordFilePath, string? deckName = null)
-    {
-        imageOutputPath = _fileManager.CreateOutputFolder(imageOutputPath);
-        wordFilePath = _fileManager.ReturnCorrectFilePath(wordFilePath, deckName);
-
-        await _deckService.DownloadCards(cardList, imageOutputPath!);
-        _wordGenerator.GenerateWord(imageOutputPath!, wordFilePath!);
-    }
 
     private void RaiseError(string? errorMessage = null)
     {

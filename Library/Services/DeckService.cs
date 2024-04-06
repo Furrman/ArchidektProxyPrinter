@@ -29,7 +29,7 @@ public class DeckService(ILogger<DeckService> logger, ArchidektApiClient archide
             return deck;
         }
 
-        deck = new DeckDetailsDTO { Name = deckDto.Name, Cards = ParseCardsToDeck(deckDto.Cards!) };
+        deck = new DeckDetailsDTO { Name = deckDto.Name!, Cards = ParseCardsToDeck(deckDto.Cards!) };
 
         await UpdateCardImageLinks(deck.Cards);
 

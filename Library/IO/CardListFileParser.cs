@@ -3,40 +3,33 @@ using Microsoft.Extensions.Logging;
 
 namespace Library.IO;
 
-public class CardListFileParser
+public class CardListFileParser(ILogger<CardListFileParser> logger, FileManager fileManager)
 {
-    private readonly List<string> _skippingLines = new()
-    {
-        "Mainboard", "Maybeboard", "Sideboard", "Commander", "Card",
-        "Artifact", "Creature", "Battle", "Planeswalker", "Enchantment", "Land", "Instant", "Sorcery"
-    };
-    private readonly ILogger<CardListFileParser> _logger;
+    private readonly ILogger<CardListFileParser> _logger = logger;
+    private readonly FileManager _fileManager = fileManager;
 
-    public CardListFileParser(ILogger<CardListFileParser> logger)
+    public DeckDetailsDTO GetDeckFromFile(string filePath)
     {
-        _logger = logger;
-    }
-
-    public Dictionary<string, CardEntryDTO> GetCardList(string filename)
-    {
-        var cardList = new Dictionary<string, CardEntryDTO>();
+        DeckDetailsDTO deck = new();
 
         try
         {
-            using var reader = new StreamReader(filename);
+            deck.Name = _fileManager.GetFilename(filePath);
+            using var reader = new StreamReader(filePath);
             string? line;
             while ((line = reader.ReadLine()) != null)
             {
-                if (!_skippingLines.Contains(line) && !string.IsNullOrWhiteSpace(line))
+                if (!string.IsNullOrWhiteSpace(line))
                 {
                     continue;
                 }
+                // TODO Add support for more complex file exporter from Archidekt
                 var cardData = ParseLine(line);
                 if (cardData == null)
                 {
                     continue;
                 }
-                cardList.Add(cardData.Value.Item1, new CardEntryDTO
+                deck.Cards.Add(cardData.Value.Item1, new CardEntryDTO
                 {
                     Name = cardData.Value.Item1,
                     Quantity = cardData.Value.Item2
@@ -48,7 +41,7 @@ public class CardListFileParser
             _logger.LogError(ex, "Error in parsing card list from file");
         }
 
-        return cardList;
+        return deck;
     }
 
 

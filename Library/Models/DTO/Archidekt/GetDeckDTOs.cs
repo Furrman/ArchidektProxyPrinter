@@ -2,8 +2,8 @@ namespace Library.Models.DTO.Archidekt;
 
 public class DeckDTO
 {
-    public ICollection<DeckCardDTO>? Cards { get; set; } = null;
-    public string Name { get; set; }
+    public ICollection<DeckCardDTO>? Cards { get; set; }
+    public string? Name { get; set; }
 }
 
 public class DeckCardDTO

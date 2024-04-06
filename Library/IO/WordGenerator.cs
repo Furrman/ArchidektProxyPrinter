@@ -4,15 +4,10 @@ using OfficeIMO.Word;
 
 namespace Library.IO;
 
-public class WordGenerator
+public class WordGenerator(ILogger<WordGenerator> logger)
 {
-    private readonly ILogger<WordGenerator> _logger;
-
-    public WordGenerator(ILogger<WordGenerator> logger)
-    {
-        _logger = logger;
-    }
-
+    private readonly ILogger<WordGenerator> _logger = logger;
+    
 
     public async Task GenerateWord(string wordFilePath, Func<WordDocument, Task>? customAction = null)
     {

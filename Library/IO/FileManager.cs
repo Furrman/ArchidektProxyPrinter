@@ -1,13 +1,28 @@
-﻿namespace Library.IO;
+﻿using Microsoft.Extensions.Logging;
 
-public class FileManager
+namespace Library.IO;
+
+public class FileManager(ILogger<FileManager> logger)
 {
+    private readonly ILogger<FileManager> _logger = logger;
+
+
+    public async Task CreateImageFile(byte[] content, string folderPath, string fileName)
+    {
+        var path = Path.Combine(folderPath, fileName);
+        try
+        {
+            await File.WriteAllBytesAsync(path, content);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in file creation");
+        }
+    }
+
     public string CreateOutputFolder(string? path)
     {
-        if (path == null)
-        {
-            path = Path.Combine(Directory.GetCurrentDirectory(), Constants.DEFAULT_FOLDER_NAME);
-        }
+        path ??= Path.Combine(Directory.GetCurrentDirectory(), Constants.DEFAULT_FOLDER_NAME);
 
         if (!Directory.Exists(path))
         {
@@ -22,7 +37,9 @@ public class FileManager
         return Directory.Exists(path);
     }
 
-    public string ReturnCorrectFilePath(string? path, string? deckName = null)
+    public string GetFilename(string path) => Path.GetFileNameWithoutExtension(path);
+
+    public string ReturnCorrectWordFilePath(string? path, string? deckName = null)
     {
         if (Path.Exists(path)) 
         {
