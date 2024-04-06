@@ -2,12 +2,12 @@
 
 using CoconoaApp = Cocona.CoconaLiteApp;
 using CoconoaOptions = Cocona.OptionAttribute;
-using ConsoleApp.Configuration;
 
+using ConsoleApp.Configuration;
+using ConsoleApp.Helpers;
 using Library;
 using Library.Services;
 using Library.Models.Events;
-using DownloadMTGCards.Helpers;
 
 namespace ConsoleApp;
 
@@ -77,11 +77,7 @@ internal class Program
                     CreateMagicDeckDocumentStageEnum.SaveToDocument => "(2/2) Download images",
                     _ => string.Empty
                 };
-                if (e.Stage > 0)
-                {
-                    Console.WriteLine();
-                }
-                Console.WriteLine(stageInfo);
+                ConsoleUtility.WriteInNewLine(stageInfo);
             }
             ConsoleUtility.WriteProgressBar((int)e.Percent, true);
         }
