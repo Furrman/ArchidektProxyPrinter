@@ -1,0 +1,84 @@
+name: Publish
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name for the release'
+        required: true
+
+jobs:
+  release:
+    name: Release
+    strategy:
+      matrix:
+        kind: ['linux', 'windows', 'macOS']
+        include:
+          - kind: linux
+            os: ubuntu-latest
+            target: linux-x64
+          - kind: windows
+            os: windows-latest
+            target: win-x64
+          - kind: macOS
+            os: macos-latest
+            target: osx-x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+
+      - name: Determine if tag exists
+        id: tag_exists
+        run: |
+          if git rev-parse -q --verify "refs/tags/${{ github.event.inputs.tag_name }}"; then
+            echo "Tag exists"
+            echo "::set-output name=tag_exists::true"
+          else
+            echo "Tag does not exist"
+            echo "::set-output name=tag_exists::false"
+          fi
+
+      - name: Create or reuse Git tag
+        run: |
+          if [ "${{ steps.tag_exists.outputs.tag_exists }}" == "true" ]; then
+            echo "Reusing existing tag: ${{ github.event.inputs.tag_name }}"
+          else
+            echo "Creating new tag: ${{ github.event.inputs.tag_name }}"
+            git tag -a ${{ github.event.inputs.tag_name }} -m "Version ${{ github.event.inputs.tag_name }}"
+            git push origin ${{ github.event.inputs.tag_name }}
+          fi
+
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Build
+        shell: bash
+        run: |
+          tag=$(git describe --tags --abbrev=0)
+          release_name="ArchidektProxyPrinter-$tag-${{ matrix.target }}"
+
+          # Build everything
+          dotnet publish ConsoleApp/ConsoleApp.csproj --runtime "${{ matrix.target }}" -c Release -o "$release_name"
+
+          # Pack files
+          if [ "${{ matrix.target }}" == "win-x64" ]; then
+            # Pack to zip for Windows
+            7z a -tzip "${release_name}.zip" "./${release_name}/*"
+          else
+          tar czvf "${release_name}.tar.gz" "$release_name"
+          fi
+
+          # Delete output directory
+          rm -r "$release_name"
+
+      - name: Publish
+        uses: softprops/action-gh-release@v1
+        with:
+          files: "ArchidektProxyPrinter*"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
