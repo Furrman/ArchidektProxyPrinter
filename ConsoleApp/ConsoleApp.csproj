@@ -5,11 +5,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <AssemblyName>ArchidektPrinter</AssemblyName>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Content Remove="C:\Users\Hubert.Furmanek\.nuget\packages\officeimo.word\0.13.0\contentFiles\any\net7.0\OfficeIMO.ico" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Cocona.Lite" Version="2.2.0" />
