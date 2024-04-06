@@ -21,7 +21,7 @@ It is console application to generate printable and editable document with cards
 
 ## Usage
 
-Call ArchidektProxyPrinter from command liner with one of the following options:
+Call ArchidektProxyPrinter file (can have .exe extension) from command liner with one of the following options:
 
     -- deck-file-path  <String>
     -- deck-id  <String>
@@ -42,4 +42,14 @@ Options:
 
 ## Installation
 
-TODO
+Download existing file from Github Releases section of this project https://github.com/Furrman/ArchidektProxyPrinter and put it anywhere you want. You can add path to this console app in your PATH environment variable.
+
+## Instruction
+
+You need to have .NET8 SDK installed to build this solution. You can use Visual Studio, Visual Studio Code IDE or just simple terminal. The command to run the build is:
+
+`dotnet build`
+
+To publish your application use:
+
+`dotnet publish --configuration Release`
