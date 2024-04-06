@@ -8,7 +8,6 @@ namespace Library;
 
 public class ArchidektPrinter(
     DeckService deckService,
-    ScryfallApiClient scryfallApiClient,
     CardListFileParser fileParser,
     WordGenerator wordGenerator,
     FileManager fileManager
@@ -17,7 +16,6 @@ public class ArchidektPrinter(
     public event EventHandler<UpdateProgressEventArgs>? ProgressUpdate;
 
     private readonly DeckService _deckService = deckService;
-    private readonly ScryfallApiClient _scryfallApiClient = scryfallApiClient;
     private readonly CardListFileParser _fileParser = fileParser;
     private readonly WordGenerator _wordGenerator = wordGenerator;
     private readonly FileManager _fileManager = fileManager;
@@ -25,7 +23,7 @@ public class ArchidektPrinter(
 
     public async Task SaveImages(int deckId, string? outputPath)
     {
-        var deckDetails = await _deckService.GetDeckDetails(deckId);
+        var deckDetails = await _deckService.GetDeckWithCardPrintDetails(deckId);
         if (deckDetails is null)
         {
             RaiseError("Getting deck details returned error");
@@ -45,7 +43,7 @@ public class ArchidektPrinter(
 
     public async Task SaveImagesAndGenerateWord(int deckId, string? outputPath, string? wordFilePath)
     {
-        var deckDetails = await _deckService.GetDeckDetails(deckId);
+        var deckDetails = await _deckService.GetDeckWithCardPrintDetails(deckId);
         if (deckDetails is null)
         {
             RaiseError("Getting deck details returned error");
@@ -70,7 +68,7 @@ public class ArchidektPrinter(
 
     public async Task GenerateWord(int deckId, string? wordFilePath)
     {
-        var deckDetails = await _deckService.GetDeckDetails(deckId);
+        var deckDetails = await _deckService.GetDeckWithCardPrintDetails(deckId);
         if (deckDetails is null)
         {
             RaiseError("Getting deck details returned error");
@@ -110,8 +108,6 @@ public class ArchidektPrinter(
         wordFilePath = _fileManager.ReturnCorrectFilePath(wordFilePath, deckName);
         _fileManager.CreateOutputFolder(Path.GetDirectoryName(wordFilePath));
 
-        await _scryfallApiClient.UpdateCardImageLinks(cardList);
-
         double step = 1; 
         double count = cardList.SelectMany(c => c.Value.ImageUrls).Count();
         if (count == 0)
@@ -127,7 +123,7 @@ public class ArchidektPrinter(
             {
                 foreach (var entry in card.Value.ImageUrls)
                 {
-                    var imageContent = await _scryfallApiClient.GetImage(entry.Value);
+                    var imageContent = await _deckService.GetImage(entry.Value);
                     if (imageContent == null)
                     {
                         step = UpdateStep(step, count);
@@ -144,7 +140,7 @@ public class ArchidektPrinter(
     {
         outputPath = _fileManager.CreateOutputFolder(outputPath);
 
-        await _scryfallApiClient.DownloadCards(cardList, outputPath!);
+        await _deckService.DownloadCards(cardList, outputPath!);
     }
 
     private async Task SaveImagesAndGenerateWord(Dictionary<string, CardEntryDTO> cardList, string? imageOutputPath, string? wordFilePath, string? deckName = null)
@@ -152,7 +148,7 @@ public class ArchidektPrinter(
         imageOutputPath = _fileManager.CreateOutputFolder(imageOutputPath);
         wordFilePath = _fileManager.ReturnCorrectFilePath(wordFilePath, deckName);
 
-        await _scryfallApiClient.DownloadCards(cardList, imageOutputPath!);
+        await _deckService.DownloadCards(cardList, imageOutputPath!);
         _wordGenerator.GenerateWord(imageOutputPath!, wordFilePath!);
     }
 

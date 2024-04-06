@@ -23,26 +23,6 @@ public class ScryfallApiClient
     }
 
 
-    public async Task UpdateCardImageLinks(Dictionary<string, CardEntryDTO> cards)
-    {
-        try
-        {
-            foreach (var card in cards)
-            {
-                var cardData = card.Value;
-                var images = await GetCardImageUrlsFromScryfall(cardData.Name);
-                if (images != null)
-                {
-                    cardData.ImageUrls = images;
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error in downloading cards from the Scryfall");
-        }
-    }
-
     public async Task<byte[]?> GetImage(string imageUrl)
     {
         try
@@ -56,31 +36,7 @@ public class ScryfallApiClient
         }
     }
 
-    public async Task DownloadCards(Dictionary<string, CardEntryDTO> cards, string outputPath)
-    {
-        try
-        {
-            foreach (var card in cards)
-            {
-                var cardData = card.Value;
-                var images = await GetCardImageUrlsFromScryfall(cardData.Name);
-                if (images != null)
-                {
-                    foreach (var image in images)
-                    {
-                        await DownloadImage(image.Value, outputPath, cardData.Name, cardData.Quantity);
-                    }
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error in downloading cards from the Scryfall");
-        }
-    }
-
-
-    private async Task<Dictionary<string, string>?> GetCardImageUrlsFromScryfall(string cardName)
+    public async Task<Dictionary<string, string>?> GetCardImageUrlsFromScryfall(string cardName)
     {
         var requestUrl = $"/cards/search?q=${cardName}";
         var response = await _httpClient.GetAsync(requestUrl);
@@ -135,21 +91,6 @@ public class ScryfallApiClient
         {
             _logger.LogError("CardName: {cardName} Request failed Request: {statusCode} {reasonPhrase}", cardName, response.StatusCode, response.ReasonPhrase);
             return null;
-        }
-    }
-
-    private async Task DownloadImage(string imageUrl, string folderPath, string filename, int quantity)
-    {
-        try
-        {
-            byte[] imageBytes = await _imageDownloadClient.GetByteArrayAsync(imageUrl);
-
-            var filePath = Path.Combine(folderPath, $"{quantity}_{filename.Replace(" // ", "-")}.jpg");
-            await File.WriteAllBytesAsync(filePath, imageBytes);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error in downloading image from the Scryfall");
         }
     }
 }
