@@ -10,7 +10,9 @@ internal static class NLogConfigurator
 {
     public static IServiceCollection SetupNLog(this IServiceCollection serviceCollection)
     {
-        LogManager.Configuration = new XmlLoggingConfiguration("nlog.config");
+        string executablePath = AppDomain.CurrentDomain.BaseDirectory;
+        string configFilePath = Path.Combine(executablePath, "nlog.config");
+        LogManager.Configuration = new XmlLoggingConfiguration(configFilePath);
         return serviceCollection
             .AddLogging(builder =>
             {
