@@ -399,6 +399,6 @@ FodyWeavers.xsd
 /Properties/launchSettings.json
 /*.txt
 
-ArchidektPrinter_output/
+ArchidektProxyPrinter_output/
 **/.DS_STORE
 **/nlog.txt
