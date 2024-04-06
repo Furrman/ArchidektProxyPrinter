@@ -28,7 +28,7 @@ internal class Program
             {
                 if (!Path.Exists(deckFilePath))
                 {
-                    Console.WriteLine("You have to specify correct PATH to your card list exported from Archidekt.");
+                    ConsoleUtility.WriteErrorMessage("You have to specify correct PATH to your card list exported from Archidekt.");
                     return;
                 }
             }
@@ -36,23 +36,23 @@ internal class Program
             {
                 if (deckId <= 0)
                 {
-                    Console.WriteLine("You have to specify correct ID of your deck in Archidekt.");
+                    ConsoleUtility.WriteErrorMessage("You have to specify correct ID of your deck in Archidekt.");
                     return;
                 }
             }
             else if (deckUrl is not null)
             {
                 var magicCardService = serviceProvider.GetService<MagicCardService>()!;
-                if (!magicCardService.TryExtractDeckIdFromUrl(args[0], out var urlDeckId) || urlDeckId <= 0)
+                if (!magicCardService.TryExtractDeckIdFromUrl(deckUrl, out var urlDeckId) || urlDeckId <= 0)
                 {
-                    Console.WriteLine("You have to specify correct URL to your deck hosted by Archidekt.");
+                    ConsoleUtility.WriteErrorMessage("You have to specify correct URL to your deck hosted by Archidekt.");
                     return;
                 }
                 deckId = urlDeckId;
             }
             else
             {
-                Console.WriteLine(@"You have to provide at least one from this list:
+                ConsoleUtility.WriteErrorMessage(@"You have to provide at least one from this list:
                 - path to exported deck
                 - deck id
                 - url to your deck.");
