@@ -401,4 +401,4 @@ FodyWeavers.xsd
 
 ArchidektPrinter_output/
 **/.DS_STORE
-**/internal-nlog.txt
+**/nlog.txt

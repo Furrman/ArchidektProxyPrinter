@@ -1,8 +1,32 @@
 ﻿namespace Library.Models.DTO;
 
-public class CardEntryDTO
+public class CardEntryDTO : IEquatable<CardEntryDTO>
 {
-    public int Quantity { get; set; }
     public string Name { get; set; } = string.Empty;
-    public Dictionary<string, string> ImageUrls { get; set; } = [];
+    public int Quantity { get; set; }
+    public HashSet<CardSideDTO> CardSides { get; set; } = [];
+
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Name, Quantity, CardSides);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        if (obj is null)
+            return false;
+
+        return Equals(obj as CardEntryDTO);
+    }
+    
+    public bool Equals(CardEntryDTO? other)
+    {
+        if (other is null)
+            return false;
+
+        return Name == other.Name 
+            && Quantity == other.Quantity 
+            && CardSides == CardSides;
+    }
 }

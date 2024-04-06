@@ -1,9 +1,12 @@
-﻿using CoconoaApp = Cocona.CoconaLiteApp;
+﻿using Microsoft.Extensions.DependencyInjection;
+
+using CoconoaApp = Cocona.CoconaLiteApp;
 using CoconoaOptions = Cocona.OptionAttribute;
 using ConsoleApp.Configuration;
+
 using Library;
 using Library.Services;
-using Microsoft.Extensions.DependencyInjection;
+using Library.Models.Events;
 
 namespace ConsoleApp;
 
@@ -61,11 +64,17 @@ internal class Program
         });
     }
 
-    private static void UpdateProgressOnConsole(object? sender, Library.Models.Events.UpdateProgressEventArgs e)
+    private static void UpdateProgressOnConsole(object? sender, UpdateProgressEventArgs e)
     {
         if (e.Percent is not null)
         {
-            Console.WriteLine($"{e.Percent:F1}%");
+            var stageInfo = e.Stage switch
+            {
+                CreateMagicDeckDocumentStageEnum.GetDeckDetails => "Get deck details: ",
+                CreateMagicDeckDocumentStageEnum.SaveToDocument => "Download images: ",
+                _ => string.Empty
+            };
+            Console.WriteLine($"{stageInfo}{e.Percent:F1}%");
         }
         if (e.ErrorMessage is not null)
         {

@@ -41,9 +41,9 @@ public class FileManager(ILogger<FileManager> logger)
 
     public string ReturnCorrectWordFilePath(string? path, string? deckName = null)
     {
-        if (Path.Exists(path)) 
+        if (Directory.Exists(path)) 
         {
-            return path;
+            return Path.Combine(path, $"{deckName}.docx");
         }
 
         return Path.Combine(Directory.GetCurrentDirectory(),

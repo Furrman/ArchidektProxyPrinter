@@ -26,7 +26,8 @@ public class ArchidektPrinter
         _fileManager = fileManager;
         _fileParser = fileParser;
 
-        _wordGeneratorService.GenerateWordProgress += UpdateGenerateWordStep;
+        _magicCardService.GetDeckDetailsProgress += UpdateGetDeckDetails;
+        _wordGeneratorService.GenerateWordProgress += UpdateGenerateWord;
     }
 
     public async Task GenerateWord(int? deckId = null, string? inputFilePath = null, string? outputPath = null, string? outputFileName = null, bool saveImages = false)
@@ -88,7 +89,7 @@ public class ArchidektPrinter
         });
     }
 
-    private void UpdateGenerateWordStep(object? sender, GenerateWordProgressEventArgs e)
+    private void UpdateGenerateWord(object? sender, GenerateWordProgressEventArgs e)
     {
         ProgressUpdate?.Invoke(this, new UpdateProgressEventArgs
         {

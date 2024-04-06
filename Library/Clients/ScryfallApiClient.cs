@@ -1,7 +1,8 @@
-﻿using Library.Models.DTO;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
+﻿using Microsoft.Extensions.Logging;
 using System.Net;
+using System.Net.Http.Json;
+
+using Library.Models.DTO.Scryfall;
 
 namespace Library.Clients;
 
@@ -31,66 +32,37 @@ public class ScryfallApiClient
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error in downloading image from the Scryfall");
+            _logger.LogError(ex, "Error in downloading image from {imageUrl}", imageUrl);
             return null;
         }
     }
 
-    public async Task<Dictionary<string, string>?> GetCardImageUrlsFromScryfall(string cardName)
+    public async Task<CardSearchDTO?> SearchCard(string cardName)
     {
+        CardSearchDTO? cardSearch = null;
         var requestUrl = $"/cards/search?q=${cardName}";
-        var response = await _httpClient.GetAsync(requestUrl);
-
-        if (response.IsSuccessStatusCode)
+        try
         {
-            var json = await response.Content.ReadAsStringAsync();
-            var jsonObject = JObject.Parse(json);
-            Dictionary<string, string> imagesUrl = new();
-            if (jsonObject?["data"] is null || jsonObject?["data"]?.Count() == 0)
-            {
-                return null;
-            }
+            var response = await _httpClient.GetAsync(requestUrl);
 
-            var index = 0;
-            for (int i = 0; i < jsonObject?["data"]!.Count(); i++)
+            if (response.IsSuccessStatusCode)
             {
-                var foundCard = jsonObject?["data"]!;
-                var foundCardName = foundCard[i]?["name"]?.ToString() ?? string.Empty;
-                if (foundCardName.Equals(cardName, StringComparison.OrdinalIgnoreCase))
-                {
-                    index = i;
-                    break;
-                }
+                cardSearch = await response.Content.ReadFromJsonAsync<CardSearchDTO>();
             }
-
-            // Handle two dual side cards as well
-            if (jsonObject?["data"]?[index]?["card_faces"] is not null)
+            else if (response.StatusCode == HttpStatusCode.NotFound)
             {
-                for (int i = 0; i < 2; i++)
-                {
-                    var sideName = jsonObject?["data"]?[index]?["card_faces"]?[i]?["name"]?.Value<string>()!;
-                    var imageUrl = jsonObject?["data"]?[index]?["card_faces"]?[i]?["image_uris"]?["large"]?.Value<string>()!;
-                    imagesUrl.Add(sideName, imageUrl);
-                }
+                _logger.LogWarning("Card '{cardName}' not found", cardName);
             }
-            // Single page card
-            if (imagesUrl.Count == 0 || imagesUrl.Any(i => i.Value is null))
+            else
             {
-                imagesUrl.Clear();
-                imagesUrl.Add(cardName, jsonObject?["data"]?[index]?["image_uris"]?["large"]?.Value<string>()!);
+                _logger.LogError("Search request failed for card '{cardName}' - ({statusCode}) {reasonPhrase}", cardName, response.StatusCode, response.ReasonPhrase);
             }
-
-            return imagesUrl;
         }
-        else if (response.StatusCode == HttpStatusCode.NotFound)
+        catch (Exception ex)
         {
-            _logger.LogWarning("CardName: {cardName} Card not found", cardName);
-            return null;
+            _logger.LogError(ex, "Error in searching for a card '{cardName}' images", cardName);
         }
-        else
-        {
-            _logger.LogError("CardName: {cardName} Request failed Request: {statusCode} {reasonPhrase}", cardName, response.StatusCode, response.ReasonPhrase);
-            return null;
-        }
+
+        return cardSearch;
     }
 }

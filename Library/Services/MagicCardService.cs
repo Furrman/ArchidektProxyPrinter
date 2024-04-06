@@ -1,13 +1,17 @@
+using Microsoft.Extensions.Logging;
+using System.Text.RegularExpressions;
+
 using Library.Clients;
 using Library.Models.DTO;
 using Library.Models.DTO.Archidekt;
-using Microsoft.Extensions.Logging;
-using System.Text.RegularExpressions;
+using Library.Models.Events;
 
 namespace Library.Services;
 
 public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClient archidektApiClient, ScryfallApiClient scryfallApiClient)
 {
+    public event EventHandler<GetDeckDetailsProgressEventArgs>? GetDeckDetailsProgress;
+
     private readonly ILogger<MagicCardService> _logger = logger;
     private readonly ArchidektApiClient _archidektApiClient = archidektApiClient;
     private readonly ScryfallApiClient _scryfallApiClient = scryfallApiClient;
@@ -42,13 +46,12 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
         {
             foreach (var card in deck.Cards)
             {
-                var cardData = card.Value;
-                var images = await _scryfallApiClient.GetCardImageUrlsFromScryfall(cardData.Name);
-                if (images != null)
+                var cardSides = await GetCardImageUrls(card.Name);
+                if (cardSides != null)
                 {
-                    foreach (var image in images)
+                    foreach (var cardSide in cardSides)
                     {
-                        await DownloadCardSideImage(image.Value, outputPath, cardData.Name, cardData.Quantity);
+                        await DownloadCardSideImage(cardSide.ImageUrl, outputPath, cardSide.Name, card.Quantity);
                     }
                 }
             }
@@ -79,8 +82,6 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
         }
     }
 
-    public async Task<byte[]?> GetImage(string url) => await _scryfallApiClient.GetImage(url);
-
     public bool TryExtractDeckIdFromUrl(string url, out int deckId)
     {
         deckId = 0;
@@ -103,9 +104,9 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
     }
 
     
-    private Dictionary<string, CardEntryDTO> ParseCardsToDeck(ICollection<DeckCardDTO> cardList)
+    private HashSet<CardEntryDTO> ParseCardsToDeck(ICollection<DeckCardDTO> cardList)
     {
-        Dictionary<string, CardEntryDTO> deckCard = []; 
+        HashSet<CardEntryDTO> deckCards = []; 
         foreach (var card in cardList)
         {
             var cardName = card.Card?.OracleCard?.Name;
@@ -114,13 +115,14 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
                 continue;
             }
 
-            if (deckCard.TryGetValue(cardName, out CardEntryDTO? value))
+            if (deckCards.Any(c => c.Name == cardName))
             {
-                value.Quantity++;
+                var cardEntry = deckCards.First(c => c.Name == cardName);
+                cardEntry.Quantity++;
             }
             else
             {
-                deckCard.Add(cardName, new CardEntryDTO
+                deckCards.Add(new CardEntryDTO
                 {
                     Name = cardName,
                     Quantity = card.Quantity
@@ -128,26 +130,83 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
             }
         }
 
-        return deckCard;
+        return deckCards;
     }
 
-    private async Task UpdateCardImageLinks(Dictionary<string, CardEntryDTO> cards)
+    private async Task UpdateCardImageLinks(HashSet<CardEntryDTO> cards)
     {
         try
         {
+            int step = 0;
+            int count = cards.Count();
             foreach (var card in cards)
             {
-                var cardData = card.Value;
-                var images = await _scryfallApiClient.GetCardImageUrlsFromScryfall(cardData.Name);
+                var images = await GetCardImageUrls(card.Name);
                 if (images != null)
                 {
-                    cardData.ImageUrls = images;
+                    card.CardSides = images;
                 }
+                step = UpdateStep(step, count);
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error in downloading cards from the Scryfall");
         }
+    }
+
+    private async Task<HashSet<CardSideDTO>?> GetCardImageUrls(string cardName)
+    {
+        var cardSearch = await _scryfallApiClient.SearchCard(cardName);
+
+        HashSet<CardSideDTO> cardSides = [];
+
+        // Look for searched card in the search result
+        var searchedCard = cardSearch?.Data?.FirstOrDefault(c => c.Name != null && c.Name.Equals(cardName, StringComparison.OrdinalIgnoreCase));
+        if (searchedCard is null)
+        {
+            _logger.LogWarning("Card {cardName} was not found in the Scryfall database", cardName);
+            return null;
+        }
+        
+        // Handle two dual side cards as well
+        if (searchedCard.Card_faces is not null)
+        {
+            foreach (var cardFace in searchedCard.Card_faces)
+            {
+                if (cardFace.Image_uris is null)
+                {
+                    continue;
+                }
+
+                cardSides.Add(new CardSideDTO { Name = cardFace.Name ?? string.Empty, ImageUrl = cardFace.Image_uris?.Large ?? string.Empty });
+            }
+        }
+
+        // Single page card
+        if (cardSides.Count == 0 || cardSides.Any(i => string.IsNullOrEmpty(i.Name) || string.IsNullOrEmpty(i.ImageUrl)))
+        {
+            cardSides.Clear();
+            if (searchedCard.Image_uris?.Large is null)
+            {
+                _logger.LogError("Card {cardName} does not have any url to its picture", cardName);
+                return null;
+            }
+            cardSides.Add(new CardSideDTO { Name = cardName, ImageUrl = searchedCard.Image_uris.Large });
+        }
+
+        return cardSides;
+    }
+
+
+    private int UpdateStep(int step, int count)
+    {
+        step++;
+        var percent = (double)step / count * 100;
+        GetDeckDetailsProgress?.Invoke(this, new GetDeckDetailsProgressEventArgs
+        {
+            Percent = percent
+        });
+        return step;
     }
 }

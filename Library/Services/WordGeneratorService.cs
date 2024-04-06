@@ -31,28 +31,28 @@ public class WordGeneratorService(ILogger<WordGeneratorService> logger, Scryfall
 
             var paragraph = document.AddParagraph();
 
-            double step = 0;
-            double count = deck.Cards.SelectMany(c => c.Value.ImageUrls).Count();
+            int step = 0;
+            int count = deck.Cards.SelectMany(c => c.CardSides).Count();
 
-            var entries = deck.Cards
-                .SelectMany(card => card.Value.ImageUrls)
-                .Select(entry => new { CardSide = entry, CardQuantity = deck.Cards[entry.Key].Quantity });
-            foreach (var entry in entries)
+            foreach (var card in deck.Cards)
             {
-                var imageContent = await _scryfallClient.GetImage(entry.CardSide.Value);
-                if (imageContent == null)
+                foreach (var cardSide in card.CardSides)
                 {
+                    var imageContent = await _scryfallClient.GetImage(cardSide.ImageUrl);
+                    if (imageContent == null)
+                    {
+                        step = UpdateStep(step, count);
+                        continue;
+                    }
+                    if (saveImages)
+                    {
+                        await _fileManager.CreateImageFile(imageContent, outputFolder, cardSide.ImageUrl);
+                    }
+
+                    AddImageToWord(paragraph, cardSide.Name, imageContent, card.Quantity);
+
                     step = UpdateStep(step, count);
-                    continue;
                 }
-                if (saveImages)
-                {
-                    await _fileManager.CreateImageFile(imageContent, outputFolder, entry.CardSide.Key);
-                }
-
-                AddImageToWord(paragraph, entry.CardSide.Key, imageContent, entry.CardQuantity);
-
-                step = UpdateStep(step, count);
             }
 
             document.Save();
@@ -69,10 +69,10 @@ public class WordGeneratorService(ILogger<WordGeneratorService> logger, Scryfall
     {
         try
         {
-            using MemoryStream stream = new(imageContent);
             for (int i = 0; i < quantity; i++)
             {
-                paragraph.AddImage(stream, imageName, width: Constants.CARD_WIDTH_PIXELS, height: Constants.CARD_HEIGHT_PIXELS);
+                using MemoryStream stream = new(imageContent);
+                paragraph.AddImage(stream, $"{imageName}{i}", width: Constants.CARD_WIDTH_PIXELS, height: Constants.CARD_HEIGHT_PIXELS);
             }
         }
         catch (Exception ex)
@@ -90,10 +90,10 @@ public class WordGeneratorService(ILogger<WordGeneratorService> logger, Scryfall
         });
     }
 
-    private double UpdateStep(double step, double count)
+    private int UpdateStep(int step, int count)
     {
         step++;
-        var percent = step / count * 100;
+        var percent = (double)step / count * 100;
         GenerateWordProgress?.Invoke(this, new GenerateWordProgressEventArgs
         {
             Percent = percent

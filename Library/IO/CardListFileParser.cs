@@ -29,7 +29,7 @@ public class CardListFileParser(ILogger<CardListFileParser> logger, FileManager 
                 {
                     continue;
                 }
-                deck.Cards.Add(cardData.Value.Item1, new CardEntryDTO
+                deck.Cards.Add(new CardEntryDTO
                 {
                     Name = cardData.Value.Item1,
                     Quantity = cardData.Value.Item2
