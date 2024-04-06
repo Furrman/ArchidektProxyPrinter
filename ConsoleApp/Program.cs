@@ -1,7 +1,7 @@
-﻿using Library;
+﻿using ConsoleApp.Configuration;
+using Library;
 using Library.Services;
 using Microsoft.Extensions.DependencyInjection;
-using ConsoleApp.Configuration;
 
 namespace ConsoleApp;
 
@@ -43,8 +43,7 @@ internal class Program
         var wordFilePath = args.Length > 2 ? args[2] : null;
 
         var archidektPrinter = serviceProvider.GetService<ArchidektPrinter>()!;
-        archidektPrinter.DownloadDeckProgress += DownloadDeckProgress;
-        archidektPrinter.GenerateWordProgress += GenerateWordProgress;
+        archidektPrinter.ProgressUpdate += UpdateProgressOnConsole;
 
         // Version with storing images and word
         //archidektPrinter.SaveImagesAndGenerateWord(deckId, inputFilePath, outputDirectoryPath, wordFilePath).Wait();
@@ -52,26 +51,16 @@ internal class Program
         archidektPrinter.GenerateWord(deckId, outputDirectoryPath, wordFilePath).Wait();
     }
 
-    private static void DownloadDeckProgress(object? sender, Library.Models.Events.DownloadDeckProgressEventArgs e)
+    private static void UpdateProgressOnConsole(object? sender, Library.Models.Events.UpdateProgressEventArgs e)
     {
-        PrintOutputToConsole(e.Percent, e.ErrorMessage);
-    }
-
-    private static void GenerateWordProgress(object? sender, Library.Models.Events.GenerateWordProgressEventArgs e)
-    {
-        PrintOutputToConsole(e.Percent, e.ErrorMessage);
-    }
-
-    private static void PrintOutputToConsole(double? percent, string? errorMessage)
-    {
-        if (percent is not null)
+        if (e.Percent is not null)
         {
-            Console.WriteLine($"{percent:F1}%");
+            Console.WriteLine($"{e.Percent:F1}%");
         }
-        if (errorMessage is not null)
+        if (e.ErrorMessage is not null)
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine(errorMessage);
+            Console.WriteLine(e.ErrorMessage);
             Console.ResetColor();
         }
     }

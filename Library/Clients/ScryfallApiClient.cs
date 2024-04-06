@@ -39,7 +39,7 @@ public class ScryfallApiClient
         }
         catch (Exception ex)
         {
-            _logger.LogCritical(ex, "Error in downloading cards from the Scryfall");
+            _logger.LogError(ex, "Error in downloading cards from the Scryfall");
         }
     }
 
@@ -75,7 +75,7 @@ public class ScryfallApiClient
         }
         catch (Exception ex)
         {
-            _logger.LogCritical(ex, "Error in downloading cards from the Scryfall");
+            _logger.LogError(ex, "Error in downloading cards from the Scryfall");
         }
     }
 

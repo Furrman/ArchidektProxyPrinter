@@ -2,44 +2,37 @@
 using Library.IO;
 using Library.Models.DTO;
 using Library.Models.Events;
-using Microsoft.Extensions.Logging;
+using Library.Services;
 
 namespace Library;
 
-public class ArchidektPrinter
-{
-    public event EventHandler<DownloadDeckProgressEventArgs>? DownloadDeckProgress;
-    public event EventHandler<GenerateWordProgressEventArgs>? GenerateWordProgress;
-
-    private readonly ILogger<ArchidektPrinter> _logger;
-    private readonly ArchidektApiClient _archidektApiClient;
-    private readonly ScryfallApiClient _scryfallApiClient;
-    private readonly CardListFileParser _fileParser;
-    private readonly WordGenerator _wordGenerator;
-    private readonly FileManager _fileManager;
-
-    public ArchidektPrinter(
-        ILogger<ArchidektPrinter> logger,
-        ArchidektApiClient archidektApiClient,
-        ScryfallApiClient scryfallApiClient,
-        CardListFileParser fileParser,
-        WordGenerator wordGenerator,
-        FileManager fileManager
+public class ArchidektPrinter(
+    DeckService deckService,
+    ScryfallApiClient scryfallApiClient,
+    CardListFileParser fileParser,
+    WordGenerator wordGenerator,
+    FileManager fileManager
         )
-    {
-        _logger = logger;
-        _archidektApiClient = archidektApiClient;
-        _scryfallApiClient = scryfallApiClient;
-        _wordGenerator = wordGenerator;
-        _fileParser = fileParser;
-        _fileManager = fileManager;
-    }
+{
+    public event EventHandler<UpdateProgressEventArgs>? ProgressUpdate;
 
+    private readonly DeckService _deckService = deckService;
+    private readonly ScryfallApiClient _scryfallApiClient = scryfallApiClient;
+    private readonly CardListFileParser _fileParser = fileParser;
+    private readonly WordGenerator _wordGenerator = wordGenerator;
+    private readonly FileManager _fileManager = fileManager;
+    
 
     public async Task SaveImages(int deckId, string? outputPath)
     {
-        var cardList = await _archidektApiClient.GetCardList(deckId);
-        await SaveImages(cardList, outputPath);
+        var deckDetails = await _deckService.GetDeckDetails(deckId);
+        if (deckDetails is null)
+        {
+            RaiseError("Getting deck details returned error");
+            return;
+        }
+
+        await SaveImages(deckDetails.Cards, outputPath);
     }
 
     public async Task SaveImages(string deckListFilePath, string? outputPath)
@@ -52,9 +45,14 @@ public class ArchidektPrinter
 
     public async Task SaveImagesAndGenerateWord(int deckId, string? outputPath, string? wordFilePath)
     {
-        var cardList = await _archidektApiClient.GetCardList(deckId);
-        var deckName = await _archidektApiClient.GetDeckName(deckId);
-        await SaveImagesAndGenerateWord(cardList, outputPath, wordFilePath, deckName);
+        var deckDetails = await _deckService.GetDeckDetails(deckId);
+        if (deckDetails is null)
+        {
+            RaiseError("Getting deck details returned error");
+            return;
+        }
+
+        await SaveImagesAndGenerateWord(deckDetails.Cards, outputPath, wordFilePath, deckDetails.Name);
     }
 
     public async Task SaveImagesAndGenerateWord(string deckListFilePath, string? outputPath, string? wordFilePath)
@@ -72,9 +70,14 @@ public class ArchidektPrinter
 
     public async Task GenerateWord(int deckId, string? wordFilePath)
     {
-        var cardList = await _archidektApiClient.GetCardList(deckId);
-        var deckName = await _archidektApiClient.GetDeckName(deckId);
-        await GenerateWord(cardList, wordFilePath, deckName);
+        var deckDetails = await _deckService.GetDeckDetails(deckId);
+        if (deckDetails is null)
+        {
+            RaiseError("Getting deck details returned error");
+            return;
+        }
+
+        await GenerateWord(deckDetails.Cards, wordFilePath, deckDetails.Name);
     }
 
     public async Task GenerateWord(string deckListFilePath, string? wordFilePath)
@@ -109,16 +112,13 @@ public class ArchidektPrinter
 
         await _scryfallApiClient.UpdateCardImageLinks(cardList);
 
-        double step = 0.0; 
-        double progress = 0.0;
+        double step = 1; 
         double count = cardList.SelectMany(c => c.Value.ImageUrls).Count();
         if (count == 0)
         {
-            UpdateWordProgress(errorMessage: "Empty deck list");
+            RaiseError("Empty deck list");
             return;
         }
-
-        UpdateWordProgress(progress);
 
         await _wordGenerator.GenerateWord(wordFilePath, async (doc) =>
         {
@@ -130,11 +130,11 @@ public class ArchidektPrinter
                     var imageContent = await _scryfallApiClient.GetImage(entry.Value);
                     if (imageContent == null)
                     {
-                        step = UpdateWordStep(step, count, progress);
+                        step = UpdateStep(step, count);
                         continue;
                     }
                     _wordGenerator.AddImageToWord(paragraph, entry.Key, imageContent, card.Value.Quantity);
-                    step = UpdateWordStep(step, count, progress);
+                    step = UpdateStep(step, count);
                 }
             }
         });
@@ -156,20 +156,22 @@ public class ArchidektPrinter
         _wordGenerator.GenerateWord(imageOutputPath!, wordFilePath!);
     }
 
-    private void UpdateWordProgress(double? percent = null, string? errorMessage = null)
+    private void RaiseError(string? errorMessage = null)
     {
-        GenerateWordProgress?.Invoke(this, new GenerateWordProgressEventArgs
+        ProgressUpdate?.Invoke(this, new UpdateProgressEventArgs
         {
-            ErrorMessage = errorMessage,
-            Percent = percent
+            ErrorMessage = errorMessage
         });
     }
 
-    private double UpdateWordStep(double step, double count, double progress)
+    private double UpdateStep(double step, double count)
     {
         step++;
-        progress = step / count * 100;
-        UpdateWordProgress(progress);
+        var percent = step / count * 100;
+        ProgressUpdate?.Invoke(this, new UpdateProgressEventArgs
+        {
+            Percent = percent
+        });
         return step;
     }
 }

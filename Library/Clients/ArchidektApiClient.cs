@@ -1,6 +1,6 @@
-﻿using Library.Models.DTO;
+﻿using Library.Models.DTO.Archidekt;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
+using System.Net.Http.Json;
 
 namespace Library.Clients;
 
@@ -19,10 +19,9 @@ public class ArchidektApiClient
         _logger = logger;
     }
 
-    public async Task<Dictionary<string, CardEntryDTO>> GetCardList(int deckId)
+    public async Task<DeckDTO?> GetDeck(int deckId)
     {
-        var cardList = new Dictionary<string, CardEntryDTO>();
-
+        DeckDTO? deckDto = null;
         var requestUrl = $"/api/decks/{deckId}/";
         HttpResponseMessage response;
         try
@@ -32,53 +31,19 @@ public class ArchidektApiClient
         catch (Exception ex)
         {
             _logger.LogError(ex, "DeckId: {deckId} Error in getting card list from the deck", deckId);
-            return cardList;
+            return deckDto;
         }
 
         if (response.IsSuccessStatusCode)
         {
-            JObject jsonObject;
             try
             {
-                var json = await response.Content.ReadAsStringAsync();
-                jsonObject = JObject.Parse(json);
+                deckDto = await response.Content.ReadFromJsonAsync<DeckDTO>();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "DeckId: {deckId} Error in parsing card list from the deck", deckId);
-                return cardList;
-            }
-
-            var cards = jsonObject?["cards"];
-            if (cards is null || cards?.Count() == 0)
-            {
-                return cardList;
-            }
-
-            foreach (var card in cards!)
-            {
-                var cardName = card?["card"]?["oracleCard"]?["name"]?.ToString();
-                if (cardName is null)
-                {
-                    continue;
-                }
-                if (!int.TryParse(card?["quantity"]?.ToString(), out var cardQuantity))
-                {
-                    continue;
-                }
-
-                if (cardList.ContainsKey(cardName))
-                {
-                    cardList[cardName].Quantity++;
-                }
-                else
-                {
-                    cardList.Add(cardName, new CardEntryDTO
-                    {
-                        Name = cardName,
-                        Quantity = cardQuantity
-                    });
-                }
+                return deckDto;
             }
         }
         else
@@ -86,46 +51,6 @@ public class ArchidektApiClient
             _logger.LogWarning("DeckId: {deckId} Failure response from getting card list from the deck Request: {statusCode} {reasonPhrase}", deckId, response.StatusCode, response.ReasonPhrase);
         }
 
-        return cardList;
-    }
-
-    public async Task<string> GetDeckName(int deckId)
-    {
-        string deckName = string.Empty;
-
-        var requestUrl = $"/api/decks/{deckId}/";
-        HttpResponseMessage response;
-        try
-        {
-            response = await _httpClient.GetAsync(requestUrl);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "DeckId: {deckId} Error in getting deck name", deckId);
-            return deckName;
-        }
-
-        if (response.IsSuccessStatusCode)
-        {
-            JObject jsonObject;
-            try
-            {
-                var json = await response.Content.ReadAsStringAsync();
-                jsonObject = JObject.Parse(json);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "DeckId: {deckId} Error in parsing response with deck name", deckId);
-                return deckName;
-            }
-
-            deckName = jsonObject?["name"]?.Value<string>()!;
-        }
-        else
-        {
-            _logger.LogWarning("DeckId: {deckId} Failure response from getting deck name Request: {statusCode} {reasonPhrase}", deckId, response.StatusCode, response.ReasonPhrase);
-        }
-
-        return deckName;
+        return deckDto;
     }
 }
