@@ -1,7 +1,7 @@
 ﻿using Library.Models.DTO;
 using Microsoft.Extensions.Logging;
 
-namespace Library;
+namespace Library.IO;
 
 public class CardListFileParser
 {

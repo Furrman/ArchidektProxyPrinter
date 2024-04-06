@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Logging;
 using OfficeIMO.Word;
 
-namespace Library;
+namespace Library.IO;
 
 public class WordGenerator
 {
@@ -68,7 +68,10 @@ public class WordGenerator
         try
         {
             using MemoryStream stream = new(imageContent);
-            paragraph.AddImage(stream, imageName, width: Constants.CARD_WIDTH_PIXELS, height: Constants.CARD_HEIGHT_PIXELS);
+            for (int i = 0; i < quantity; i++)
+            {
+                paragraph.AddImage(stream, imageName, width: Constants.CARD_WIDTH_PIXELS, height: Constants.CARD_HEIGHT_PIXELS);
+            }
         }
         catch (Exception ex)
         {

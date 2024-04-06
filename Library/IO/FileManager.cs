@@ -1,4 +1,4 @@
-﻿namespace Library;
+﻿namespace Library.IO;
 
 public class FileManager
 {

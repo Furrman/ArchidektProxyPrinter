@@ -1,14 +1,15 @@
 ﻿using Library.Clients;
+using Library.IO;
 using Library.Models.DTO;
 using Library.Models.Events;
 using Microsoft.Extensions.Logging;
-using System.Text.RegularExpressions;
 
 namespace Library;
 
 public class ArchidektPrinter
 {
-    public event EventHandler<GenerateWordProgressEventArgs>? ProgressUpdate;
+    public event EventHandler<DownloadDeckProgressEventArgs>? DownloadDeckProgress;
+    public event EventHandler<GenerateWordProgressEventArgs>? GenerateWordProgress;
 
     private readonly ILogger<ArchidektPrinter> _logger;
     private readonly ArchidektApiClient _archidektApiClient;
@@ -100,27 +101,6 @@ public class ArchidektPrinter
         _wordGenerator.GenerateWord(imageFolderPath, wordFilePath!);
     }
 
-    public bool TryExtractDeckIdFromUrl(string url, out int deckId)
-    {
-        deckId = 0;
-        string pattern = @"^https:\/\/archidekt\.com\/(?:api\/decks\/(\d+)\/|decks\/(\d+)\/)";
-        Regex regex = new(pattern);
-
-        Match match = regex.Match(url);
-        if (match.Success)
-        {
-            for (int i = 1; i < match.Groups.Count; i++)
-            {
-                if (int.TryParse(match.Groups[i].Value, out deckId))
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
 
     private async Task GenerateWord(Dictionary<string, CardEntryDTO> cardList, string? wordFilePath, string? deckName = null)
     {
@@ -130,9 +110,15 @@ public class ArchidektPrinter
         await _scryfallApiClient.UpdateCardImageLinks(cardList);
 
         double step = 0.0; 
-        double count = cardList.SelectMany(c => c.Value.ImageUrls).Count();
         double progress = 0.0;
-        UpdateProgress(progress);
+        double count = cardList.SelectMany(c => c.Value.ImageUrls).Count();
+        if (count == 0)
+        {
+            UpdateWordProgress(errorMessage: "Empty deck list");
+            return;
+        }
+
+        UpdateWordProgress(progress);
 
         await _wordGenerator.GenerateWord(wordFilePath, async (doc) =>
         {
@@ -144,11 +130,11 @@ public class ArchidektPrinter
                     var imageContent = await _scryfallApiClient.GetImage(entry.Value);
                     if (imageContent == null)
                     {
-                        step = UpdateStep(step, count, progress);
+                        step = UpdateWordStep(step, count, progress);
                         continue;
                     }
                     _wordGenerator.AddImageToWord(paragraph, entry.Key, imageContent, card.Value.Quantity);
-                    step = UpdateStep(step, count, progress);
+                    step = UpdateWordStep(step, count, progress);
                 }
             }
         });
@@ -170,20 +156,20 @@ public class ArchidektPrinter
         _wordGenerator.GenerateWord(imageOutputPath!, wordFilePath!);
     }
 
-    private void UpdateProgress(double? percent = null, string? errorMessage = null)
+    private void UpdateWordProgress(double? percent = null, string? errorMessage = null)
     {
-        ProgressUpdate?.Invoke(this, new GenerateWordProgressEventArgs
+        GenerateWordProgress?.Invoke(this, new GenerateWordProgressEventArgs
         {
             ErrorMessage = errorMessage,
             Percent = percent
         });
     }
 
-    private double UpdateStep(double step, double count, double progress)
+    private double UpdateWordStep(double step, double count, double progress)
     {
         step++;
         progress = step / count * 100;
-        UpdateProgress(progress);
+        UpdateWordProgress(progress);
         return step;
     }
 }

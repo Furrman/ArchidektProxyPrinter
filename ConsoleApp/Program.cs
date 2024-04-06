@@ -1,4 +1,5 @@
 ﻿using Library;
+using Library.Services;
 using Microsoft.Extensions.DependencyInjection;
 using ConsoleApp.Configuration;
 
@@ -19,7 +20,7 @@ internal class Program
             return;
         }
 
-        var archidektPrinter = serviceProvider.GetService<ArchidektPrinter>()!;
+        var deckService = serviceProvider.GetService<DeckService>()!;
 
         int deckId = 0;
         string? inputFilePath = null;
@@ -30,7 +31,7 @@ internal class Program
         else
         {
             int.TryParse(args[0], out deckId);
-            if (deckId == 0) archidektPrinter.TryExtractDeckIdFromUrl(args[0], out deckId);
+            if (deckId == 0) deckService.TryExtractDeckIdFromUrl(args[0], out deckId);
         }
         if (deckId == 0)
         {
@@ -41,7 +42,9 @@ internal class Program
         var outputDirectoryPath = args.Length > 1 ? args[1] : null;
         var wordFilePath = args.Length > 2 ? args[2] : null;
 
-        archidektPrinter.ProgressUpdate += UpdateProgress;
+        var archidektPrinter = serviceProvider.GetService<ArchidektPrinter>()!;
+        archidektPrinter.DownloadDeckProgress += DownloadDeckProgress;
+        archidektPrinter.GenerateWordProgress += GenerateWordProgress;
 
         // Version with storing images and word
         //archidektPrinter.SaveImagesAndGenerateWord(deckId, inputFilePath, outputDirectoryPath, wordFilePath).Wait();
@@ -49,16 +52,26 @@ internal class Program
         archidektPrinter.GenerateWord(deckId, outputDirectoryPath, wordFilePath).Wait();
     }
 
-    private static void UpdateProgress(object? sender, Library.Models.Events.GenerateWordProgressEventArgs e)
+    private static void DownloadDeckProgress(object? sender, Library.Models.Events.DownloadDeckProgressEventArgs e)
     {
-        if (e.Percent is not null)
+        PrintOutputToConsole(e.Percent, e.ErrorMessage);
+    }
+
+    private static void GenerateWordProgress(object? sender, Library.Models.Events.GenerateWordProgressEventArgs e)
+    {
+        PrintOutputToConsole(e.Percent, e.ErrorMessage);
+    }
+
+    private static void PrintOutputToConsole(double? percent, string? errorMessage)
+    {
+        if (percent is not null)
         {
-            Console.WriteLine($"{e.Percent:F1}%");
+            Console.WriteLine($"{percent:F1}%");
         }
-        if (e.ErrorMessage is not null)
+        if (errorMessage is not null)
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine(e.ErrorMessage);
+            Console.WriteLine(errorMessage);
             Console.ResetColor();
         }
     }

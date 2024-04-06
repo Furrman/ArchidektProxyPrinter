@@ -398,3 +398,5 @@ FodyWeavers.xsd
 *.sln.iml
 /Properties/launchSettings.json
 /*.txt
+
+**/.DS_STORE
