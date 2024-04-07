@@ -40,28 +40,6 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
         return deck;
     }
 
-    public async Task DownloadDeckCards(DeckDetailsDTO deck, string outputPath)
-    {
-        try
-        {
-            foreach (var card in deck.Cards)
-            {
-                var cardSides = await GetCardImageUrls(card.Name);
-                if (cardSides != null)
-                {
-                    foreach (var cardSide in cardSides)
-                    {
-                        await DownloadCardSideImage(cardSide.ImageUrl, outputPath, cardSide.Name, card.Quantity);
-                    }
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error in downloading cards from the Scryfall");
-        }
-    }
-
     public async Task DownloadCardSideImage(string imageUrl, string folderPath, string filename, int quantity)
     {
         try
