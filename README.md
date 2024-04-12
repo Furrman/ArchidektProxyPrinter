@@ -19,10 +19,11 @@ If so, then this application is for you! It allows you to generate a printable a
 
 - Download cards from specified expansion or specific version
 - Support all export types from Archidekt
-- Download tokens
-- Produce PDF document instead of Word
+- Download tokens (Archidekt is not supporting tokens https://archidekt.com/forum/thread/884003/1 )
+- Produce read-only PDF document instead of Word
 - Create Web version in ASP.NET API with Blazor
 - Host Web version via Github Pages
+- Build Web version via Github Actions
 - Support to other tools like Moxfield or MTGGoldfish
 
 ## Usage
