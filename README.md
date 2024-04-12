@@ -1,8 +1,8 @@
 # ArchidektProxyPrinter
 
-Have you ever thought about building your deck in Magic The Gathering? Did you miss some cards for your new created deck but you still wanted to give it a try? Did you need some card replacement until you new cards will arrive? Or you wanted to build a deck before spending your real money on it?
+Have you ever thought about building your deck in Magic The Gathering? Have you ever found yourself missing some cards for your newly created deck, but still wanted to give it a try? Do you need some card replacements until your new cards arrive? Or perhaps you want to build a deck before spending real money on it?
 
-Then this application is for you! It allows you to generate printable and editable document with cards from a deck stored in Archidekt or exported to text file. Thanks to this you can easily print your previously created deck and try it in table with your friend(s)!
+If so, then this application is for you! It allows you to generate a printable and editable document with cards from a deck stored in Archidekt or exported to a text file. With this application, you can easily print your previously created deck and try it out at the table with your friend(s)!
 
 ## Features
 
