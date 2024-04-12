@@ -6,8 +6,6 @@ If so, then this application is for you! It allows you to generate a printable a
 
 ## Features
 
-Available from v1.0.0:
-
 - Download deck list straight from archidekt via url or deck id
 - Get deck list from exported file
 - Add cards number of times per number of quantity
@@ -18,8 +16,6 @@ Available from v1.0.0:
 - Show % progress status in console app
 
 ## Plans
-
-Available in future versions:
 
 - Download cards from specified expansion or specific version
 - Support all export types from Archidekt
