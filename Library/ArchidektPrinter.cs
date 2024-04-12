@@ -11,13 +11,13 @@ public class ArchidektPrinter
 
     private readonly MagicCardService _magicCardService;
     private readonly WordGeneratorService _wordGeneratorService;
-    private readonly FileManager _fileManager;
+    private readonly IFileManager _fileManager;
     private readonly CardListFileParser _fileParser;
 
     public ArchidektPrinter(
         MagicCardService magicCardService,
         WordGeneratorService wordGeneratorService,
-        FileManager fileManager,
+        IFileManager fileManager,
         CardListFileParser fileParser
         )
     {

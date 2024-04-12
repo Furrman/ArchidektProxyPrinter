@@ -4,6 +4,9 @@ public class CardEntryDTO : IEquatable<CardEntryDTO>
 {
     public string Name { get; set; } = string.Empty;
     public int Quantity { get; set; }
+    public string? ExpansionCode { get; set; }
+    public bool Etched { get; set; }
+    public bool Foil { get; set; }
     public HashSet<CardSideDTO> CardSides { get; set; } = [];
 
 

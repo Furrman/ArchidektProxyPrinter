@@ -82,9 +82,9 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
     }
 
     
-    private HashSet<CardEntryDTO> ParseCardsToDeck(ICollection<DeckCardDTO> cardList)
+    private List<CardEntryDTO> ParseCardsToDeck(ICollection<DeckCardDTO> cardList)
     {
-        HashSet<CardEntryDTO> deckCards = []; 
+        List<CardEntryDTO> deckCards = []; 
         foreach (var card in cardList)
         {
             var cardName = card.Card?.OracleCard?.Name;
@@ -93,25 +93,17 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
                 continue;
             }
 
-            if (deckCards.Any(c => c.Name == cardName))
+            deckCards.Add(new CardEntryDTO
             {
-                var cardEntry = deckCards.First(c => c.Name == cardName);
-                cardEntry.Quantity++;
-            }
-            else
-            {
-                deckCards.Add(new CardEntryDTO
-                {
-                    Name = cardName,
-                    Quantity = card.Quantity
-                });
-            }
+                Name = cardName,
+                Quantity = card.Quantity
+            });
         }
 
         return deckCards;
     }
 
-    private async Task UpdateCardImageLinks(HashSet<CardEntryDTO> cards)
+    private async Task UpdateCardImageLinks(List<CardEntryDTO> cards)
     {
         try
         {
