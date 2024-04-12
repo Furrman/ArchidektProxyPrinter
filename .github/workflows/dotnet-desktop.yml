@@ -13,6 +13,7 @@ jobs:
   release:
     name: Release
     strategy:
+      max-parallel: 3
       matrix:
         kind: ['linux', 'windows', 'macOS']
         include:
@@ -29,27 +30,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v1
-
-      - name: Determine if tag exists
-        id: tag_exists
-        run: |
-          if git rev-parse -q --verify "refs/tags/${{ github.event.inputs.tag_name }}"; then
-            echo "Tag exists"
-            echo "::set-output name=tag_exists::true"
-          else
-            echo "Tag does not exist"
-            echo "::set-output name=tag_exists::false"
-          fi
-
-      - name: Create or reuse Git tag
-        run: |
-          if [ "${{ steps.tag_exists.outputs.tag_exists }}" == "true" ]; then
-            echo "Reusing existing tag: ${{ github.event.inputs.tag_name }}"
-          else
-            echo "Creating new tag: ${{ github.event.inputs.tag_name }}"
-            git tag -a ${{ github.event.inputs.tag_name }} -m "Version ${{ github.event.inputs.tag_name }}"
-            git push origin ${{ github.event.inputs.tag_name }}
-          fi
 
       - name: Setup dotnet
         uses: actions/setup-dotnet@v1
@@ -75,10 +55,16 @@ jobs:
 
           # Delete output directory
           rm -r "$release_name"
+          
+      - name: Get registration token
+        id: getRegToken
+        run: |
+          curl -X POST -H \"Accept: application/vnd.github.v3+json\"  -H 'Authorization: token ${{ secrets.GITHUB_TOKEN }}' https://api.github.com/repos/myprofile/myrepo/actions/runners/registration-token
 
       - name: Publish
         uses: softprops/action-gh-release@v1
         with:
           files: "ArchidektProxyPrinter*"
+          tag_name: ${{ github.event.inputs.tag_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

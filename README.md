@@ -1,8 +1,12 @@
 # ArchidektProxyPrinter
 
-It is console application to generate printable and editable document with cards from a deck stored in Archidekt or exported to text file.
+Have you ever thought about building your deck in Magic The Gathering? Did you miss some cards for your new created deck but you still wanted to give it a try? Did you need some card replacement until you new cards will arrive? Or you wanted to build a deck before spending your real money on it?
+
+Then this application is for you! It allows you to generate printable and editable document with cards from a deck stored in Archidekt or exported to text file. Thanks to this you can easily print your previously created deck and try it in table with your friend(s)!
 
 ## Features
+
+Available from v1.0.0:
 
 - Download deck list straight from archidekt via url or deck id
 - Get deck list from exported file
@@ -15,9 +19,15 @@ It is console application to generate printable and editable document with cards
 
 ## Plans
 
+Available in future versions:
+
 - Download cards from specified expansion or specific version
+- Support all export types from Archidekt
+- Download tokens
 - Produce PDF document instead of Word
-- Create Web version in ASP.NET API
+- Create Web version in ASP.NET API with Blazor
+- Host Web version via Github Pages
+- Support to other tools like Moxfield or MTGGoldfish
 
 ## Usage
 
