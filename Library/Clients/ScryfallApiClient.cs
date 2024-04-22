@@ -4,7 +4,6 @@ using System.Net.Http.Json;
 
 using Library.Models.DTO.Scryfall;
 using Library.Models.DTO;
-using DocumentFormat.OpenXml.Vml.Spreadsheet;
 
 namespace Library.Clients;
 
@@ -43,6 +42,7 @@ public class ScryfallApiClient
         card.ExpansionCode != null && card.CollectorNumber != null
             ? new() { Data = [await GetCard(card.Name, card.ExpansionCode, card.CollectorNumber)] }
             : await SearchCard(card.Name);
+
 
     private async Task<CardSearchDTO?> SearchCard(string cardName)
     {
