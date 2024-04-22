@@ -23,6 +23,7 @@ public class CardDTO
 public class OracleCardDTO
 {
     public string? Name { get; set; }
+    public string? Layout { get; set; }
 }
 
 public class EditionDTO

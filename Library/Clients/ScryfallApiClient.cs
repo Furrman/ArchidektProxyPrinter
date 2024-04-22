@@ -41,13 +41,18 @@ public class ScryfallApiClient
     public async Task<CardSearchDTO?> FindCard(CardEntryDTO card) => 
         card.ExpansionCode != null && card.CollectorNumber != null
             ? new() { Data = [await GetCard(card.Name, card.ExpansionCode, card.CollectorNumber)] }
-            : await SearchCard(card.Name);
+            : await SearchCard(card.Name, card.ExpansionCode is not null || card.Etched);
 
 
-    private async Task<CardSearchDTO?> SearchCard(string cardName)
+    private async Task<CardSearchDTO?> SearchCard(string cardName, bool extended)
     {
         CardSearchDTO? cardSearch = null;
         var requestUrl = $"/cards/search?q=${cardName}";
+        if (extended)
+        {
+            requestUrl += $"{requestUrl}&unique=prints";
+        }
+
         try
         {
             var response = await _httpClient.GetAsync(requestUrl);

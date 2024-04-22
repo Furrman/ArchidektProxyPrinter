@@ -99,6 +99,7 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
                 Quantity = card.Quantity,
                 CollectorNumber = card.Card?.CollectorNumber,
                 ExpansionCode = card.Card?.Edition?.EditionCode,
+                Art = string.Equals(card.Card?.OracleCard?.Layout, "art_series", StringComparison.OrdinalIgnoreCase),
                 Etched = string.Equals(card.Modifier, "Etched", StringComparison.OrdinalIgnoreCase),
                 Foil = string.Equals(card.Modifier, "Foil", StringComparison.OrdinalIgnoreCase),
             });
@@ -136,7 +137,11 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
         HashSet<CardSideDTO> cardSides = [];
 
         // Look for searched card in the search result
-        var searchedCard = cardSearch?.Data?.FirstOrDefault(c => c != null && c.Name != null && c.Name.Equals(card.Name, StringComparison.OrdinalIgnoreCase));
+        var searchedCard = cardSearch?.Data?.FirstOrDefault(c => 
+            c != null && c.Name != null && c.Name.Equals(card.Name, StringComparison.OrdinalIgnoreCase) // Find by name
+            && ((!card.Etched) || (card.Etched && c.TcgplayerEtchedId is not null)) // Find etched frame if required
+            && card.ExpansionCode is not null && string.Equals(card.ExpansionCode, c.Set) // Find by expansion if required
+            );
         if (searchedCard is null)
         {
             _logger.LogWarning("Card {card.Name} was not found in the Scryfall database", card.Name);
@@ -144,29 +149,35 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
         }
         
         // Handle two dual side cards as well
-        if (searchedCard.Card_faces is not null)
+        if (searchedCard.CardFaces is not null)
         {
-            foreach (var cardFace in searchedCard.Card_faces)
+            foreach (var cardFace in searchedCard.CardFaces)
             {
-                if (cardFace.Image_uris is null)
+                if (cardFace.ImageUris is null)
                 {
                     continue;
                 }
 
-                cardSides.Add(new CardSideDTO { Name = cardFace.Name ?? string.Empty, ImageUrl = cardFace.Image_uris?.Large ?? string.Empty });
+                cardSides.Add(new CardSideDTO { Name = cardFace.Name ?? string.Empty, ImageUrl = cardFace.ImageUris?.Large ?? string.Empty });
             }
+        }
+
+        // Remove back side of art as it is simple placeholder
+        if (card.Art == true && cardSides.Count > 0)
+        {
+            cardSides = [cardSides.First()];
         }
 
         // Single page card
         if (cardSides.Count == 0 || cardSides.Any(i => string.IsNullOrEmpty(i.Name) || string.IsNullOrEmpty(i.ImageUrl)))
         {
             cardSides.Clear();
-            if (searchedCard.Image_uris?.Large is null)
+            if (searchedCard.ImageUris?.Large is null)
             {
                 _logger.LogError("Card {Name} does not have any url to its picture", card.Name);
                 return null;
             }
-            cardSides.Add(new CardSideDTO { Name = card.Name, ImageUrl = searchedCard.Image_uris.Large });
+            cardSides.Add(new CardSideDTO { Name = card.Name, ImageUrl = searchedCard.ImageUris.Large });
         }
 
         return cardSides;

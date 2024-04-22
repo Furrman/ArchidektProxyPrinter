@@ -12,6 +12,10 @@ public class CardEntryDTO : IEquatable<CardEntryDTO>
     /// Not supported by Archidekt file export
     /// </summary>
     public string? CollectorNumber { get; set; }
+    /// <summary>
+    /// Not supported by Archidekt file export
+    /// </summary>
+    public bool? Art { get; set; }
     public bool Etched { get; set; }
     public bool Foil { get; set; }
     public HashSet<CardSideDTO> CardSides { get; set; } = [];
