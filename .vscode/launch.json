@@ -5,10 +5,31 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "ConsoleApp Debug",
-            "type": "dotnet",
+            "name": ".NET Core Build & Run (console)",
+            "type": "coreclr",
             "request": "launch",
-            "projectPath": "${workspaceFolder}/ConsoleApp/ConsoleApp.csproj"
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/ConsoleApp/bin/Debug/net8.0/ArchidektProxyPrinter.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        },
+        {
+            "name": ".NET Core Run (console)",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/ConsoleApp/bin/Debug/net8.0/ArchidektProxyPrinter.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        },
+        {
+            "name": ".NET Core Attach",
+            "type": "coreclr",
+            "request": "attach",
+            "processId": "${command:pickProcess}"
         }
     ]
 }
