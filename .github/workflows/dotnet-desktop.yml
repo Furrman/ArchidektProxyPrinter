@@ -63,10 +63,20 @@ jobs:
         run: |
           curl -X POST -H \"Accept: application/vnd.github.v3+json\"  -H 'Authorization: token ${{ secrets.GITHUB_TOKEN }}' https://api.github.com/repos/myprofile/myrepo/actions/runners/registration-token
 
+      - name: Dump ref_name
+        env:
+          TEST: ${{ github.ref_name }}
+        run: echo "$TEST"
+        
+      - name: Dump tag_name
+        env:
+          TEST2: ${{ github.event.inputs.tag_name }}
+        run: echo "$TEST2"
+        
       - name: Publish
         uses: softprops/action-gh-release@v1
         with:
           files: "ArchidektProxyPrinter*"
-          tag_name: ${{ github.event.inputs.tag_name || github.ref_name }}
+          tag_name: ${{ github.ref_name || github.event.inputs.tag_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
