@@ -4,7 +4,14 @@ public class CardEntryDTO : IEquatable<CardEntryDTO>
 {
     public string Name { get; set; } = string.Empty;
     public int Quantity { get; set; }
+    /// <summary>
+    /// Not supported by Archidekt file export
+    /// </summary>
     public string? ExpansionCode { get; set; }
+    /// <summary>
+    /// Not supported by Archidekt file export
+    /// </summary>
+    public string? CollectorNumber { get; set; }
     public bool Etched { get; set; }
     public bool Foil { get; set; }
     public HashSet<CardSideDTO> CardSides { get; set; } = [];

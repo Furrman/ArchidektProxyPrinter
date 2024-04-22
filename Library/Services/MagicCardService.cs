@@ -5,6 +5,7 @@ using Library.Clients;
 using Library.Models.DTO;
 using Library.Models.DTO.Archidekt;
 using Library.Models.Events;
+using DocumentFormat.OpenXml.Wordprocessing;
 
 namespace Library.Services;
 
@@ -96,7 +97,11 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
             deckCards.Add(new CardEntryDTO
             {
                 Name = cardName,
-                Quantity = card.Quantity
+                Quantity = card.Quantity,
+                CollectorNumber = card.Card?.CollectorNumber,
+                ExpansionCode = card.Card?.Edition?.EditionCode,
+                Etched = string.Equals(card.Modifier, "Etched", StringComparison.OrdinalIgnoreCase),
+                Foil = string.Equals(card.Modifier, "Foil", StringComparison.OrdinalIgnoreCase),
             });
         }
 
@@ -111,7 +116,7 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
             int step = UpdateStep(0, count);
             foreach (var card in cards)
             {
-                var images = await GetCardImageUrls(card.Name);
+                var images = await GetCardImageUrls(card);
                 if (images != null)
                 {
                     card.CardSides = images;
@@ -125,17 +130,17 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
         }
     }
 
-    private async Task<HashSet<CardSideDTO>?> GetCardImageUrls(string cardName)
+    private async Task<HashSet<CardSideDTO>?> GetCardImageUrls(CardEntryDTO card)
     {
-        var cardSearch = await _scryfallApiClient.SearchCard(cardName);
+        var cardSearch = await _scryfallApiClient.FindCard(card);
 
         HashSet<CardSideDTO> cardSides = [];
 
         // Look for searched card in the search result
-        var searchedCard = cardSearch?.Data?.FirstOrDefault(c => c.Name != null && c.Name.Equals(cardName, StringComparison.OrdinalIgnoreCase));
+        var searchedCard = cardSearch?.Data?.FirstOrDefault(c => c != null && c.Name != null && c.Name.Equals(card.Name, StringComparison.OrdinalIgnoreCase));
         if (searchedCard is null)
         {
-            _logger.LogWarning("Card {cardName} was not found in the Scryfall database", cardName);
+            _logger.LogWarning("Card {card.Name} was not found in the Scryfall database", card.Name);
             return null;
         }
         
@@ -159,10 +164,10 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
             cardSides.Clear();
             if (searchedCard.Image_uris?.Large is null)
             {
-                _logger.LogError("Card {cardName} does not have any url to its picture", cardName);
+                _logger.LogError("Card {Name} does not have any url to its picture", card.Name);
                 return null;
             }
-            cardSides.Add(new CardSideDTO { Name = cardName, ImageUrl = searchedCard.Image_uris.Large });
+            cardSides.Add(new CardSideDTO { Name = card.Name, ImageUrl = searchedCard.Image_uris.Large });
         }
 
         return cardSides;

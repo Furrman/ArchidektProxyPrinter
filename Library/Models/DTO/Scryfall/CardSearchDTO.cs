@@ -2,7 +2,7 @@ namespace Library.Models.DTO.Scryfall;
 
 public class CardSearchDTO
 {
-    public ICollection<CardDataDTO>? Data { get; set; }
+    public ICollection<CardDataDTO?>? Data { get; set; }
 }
 
 public class CardDataDTO
