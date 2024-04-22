@@ -104,7 +104,7 @@ public class FileManager : IFileManager
             string? line;
             while ((line = reader.ReadLine()) != null)
             {
-                if (!string.IsNullOrWhiteSpace(line))
+                if (string.IsNullOrWhiteSpace(line))
                 {
                     continue;
                 }

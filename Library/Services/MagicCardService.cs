@@ -17,28 +17,6 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
     private readonly ScryfallApiClient _scryfallApiClient = scryfallApiClient;
 
 
-    public async Task<DeckDetailsDTO?> GetDeckWithCardPrintDetails(int deckId)
-    {
-        DeckDetailsDTO? deck = null;
-        
-        var deckDto = await _archidektApiClient.GetDeck(deckId);
-        if (deckDto is null)
-        {
-            _logger.LogError("Deck not loaded from internet");
-            return deck;
-        }
-        if (deckDto.Cards is null || deckDto.Cards.Count == 0)
-        {
-            _logger.LogError("Deck is empty");
-            return deck;
-        }
-
-        deck = new DeckDetailsDTO { Name = deckDto.Name!, Cards = ParseCardsToDeck(deckDto.Cards!) };
-
-        await UpdateCardImageLinks(deck.Cards);
-
-        return deck;
-    }
 
     public async Task DownloadCardSideImage(string imageUrl, string folderPath, string filename, int quantity)
     {
@@ -58,6 +36,29 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
         {
             _logger.LogError(ex, "Error in downloading image from the Scryfall");
         }
+    }
+
+    public async Task<DeckDetailsDTO?> GetDeckWithCardPrintDetails(int deckId)
+    {
+        DeckDetailsDTO? deck = null;
+
+        var deckDto = await _archidektApiClient.GetDeck(deckId);
+        if (deckDto is null)
+        {
+            _logger.LogError("Deck not loaded from internet");
+            return deck;
+        }
+        if (deckDto.Cards is null || deckDto.Cards.Count == 0)
+        {
+            _logger.LogError("Deck is empty");
+            return deck;
+        }
+
+        deck = new DeckDetailsDTO { Name = deckDto.Name!, Cards = ParseCardsToDeck(deckDto.Cards!) };
+
+        await UpdateCardImageLinks(deck.Cards);
+
+        return deck;
     }
 
     public bool TryExtractDeckIdFromUrl(string url, out int deckId)
@@ -81,7 +82,29 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
         return false;
     }
 
-    
+    public async Task UpdateCardImageLinks(List<CardEntryDTO> cards)
+    {
+        try
+        {
+            int count = cards.Count;
+            int step = UpdateStep(0, count);
+            foreach (var card in cards)
+            {
+                var images = await GetCardImageUrls(card);
+                if (images != null)
+                {
+                    card.CardSides = images;
+                }
+                step = UpdateStep(step, count);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in downloading cards from the Scryfall");
+        }
+    }
+
+
     private List<CardEntryDTO> ParseCardsToDeck(ICollection<DeckCardDTO> cardList)
     {
         List<CardEntryDTO> deckCards = []; 
@@ -106,28 +129,6 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
         }
 
         return deckCards;
-    }
-
-    private async Task UpdateCardImageLinks(List<CardEntryDTO> cards)
-    {
-        try
-        {
-            int count = cards.Count();
-            int step = UpdateStep(0, count);
-            foreach (var card in cards)
-            {
-                var images = await GetCardImageUrls(card);
-                if (images != null)
-                {
-                    card.CardSides = images;
-                }
-                step = UpdateStep(step, count);
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error in downloading cards from the Scryfall");
-        }
     }
 
     private async Task<HashSet<CardSideDTO>?> GetCardImageUrls(CardEntryDTO card)
@@ -162,8 +163,11 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
             }
         }
 
+        var nameSplit = card.Name.Split(" // ");
         // Remove back side of art as it is simple placeholder
-        if (card.Art == true && cardSides.Count > 0)
+        if ((card.Art || 
+            (nameSplit.Count() > 1 && nameSplit[0] == nameSplit[1])) 
+            && cardSides.Count > 0)
         {
             cardSides = [cardSides.First()];
         }

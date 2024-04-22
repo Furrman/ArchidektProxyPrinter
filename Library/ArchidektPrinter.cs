@@ -32,7 +32,7 @@ public class ArchidektPrinter
 
     public async Task GenerateWord(int? deckId = null, string? inputFilePath = null, string? outputPath = null, string? outputFileName = null, bool saveImages = false)
     {
-        if (deckId != 0) await GenerateWord(deckId!.Value, outputPath, outputFileName, saveImages);
+        if (deckId != null) await GenerateWord(deckId!.Value, outputPath, outputFileName, saveImages);
         else if (inputFilePath != null) await GenerateWord(inputFilePath, outputPath, outputFileName, saveImages);
         else throw new ArgumentException("DeckId has to be bigger than 0 or WordFilePath has to be corrected");
     }
@@ -52,6 +52,7 @@ public class ArchidektPrinter
     public async Task GenerateWord(string deckListFilePath, string? outputPath = null, string? outputFileName = null, bool saveImages = false)
     {
         var cardList = _fileParser.GetDeckFromFile(deckListFilePath);
+        outputFileName ??= _fileManager.GetFilename(deckListFilePath);
         await GenerateWord(cardList, outputPath, outputFileName, saveImages);
     }
 
@@ -66,6 +67,8 @@ public class ArchidektPrinter
 
         outputPath = _fileManager.CreateOutputFolder(outputPath);
         var wordFilePath = _fileManager.ReturnCorrectWordFilePath(outputPath, outputFileName);
+
+        await _magicCardService.UpdateCardImageLinks(deck.Cards);
 
         await _wordGeneratorService.GenerateWord(deck, outputPath, wordFilePath, saveImages);
     }
