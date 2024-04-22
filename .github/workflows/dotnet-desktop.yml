@@ -27,6 +27,8 @@ jobs:
             os: macos-latest
             target: osx-x64
     runs-on: ${{ matrix.os }}
+    outputs:
+      version: ${{ steps.gen_version.outputs.VERSION }}
     steps:
       - name: Checkout
         uses: actions/checkout@v1
@@ -65,6 +67,6 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: "ArchidektProxyPrinter*"
-          tag_name: ${{ github.event.inputs.tag_name || github.ref }}
+          tag_name: ${{ github.event.inputs.tag_name || github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
