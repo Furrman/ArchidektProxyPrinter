@@ -10,13 +10,13 @@ using Library.IO;
 
 namespace Library.Services;
 
-public class WordGeneratorService(ILogger<WordGeneratorService> logger, ScryfallApiClient scryfallClient, FileManager fileManager)
+public class WordGeneratorService(ILogger<WordGeneratorService> logger, ScryfallApiClient scryfallClient, IFileManager fileManager)
 {
     public event EventHandler<GenerateWordProgressEventArgs>? GenerateWordProgress;
 
     private readonly ILogger<WordGeneratorService> _logger = logger;
     private readonly ScryfallApiClient _scryfallClient = scryfallClient;
-    private readonly FileManager _fileManager = fileManager;
+    private readonly IFileManager _fileManager = fileManager;
 
 
     public async Task GenerateWord(DeckDetailsDTO deck, string outputFolder, string wordFilePath, bool saveImages)

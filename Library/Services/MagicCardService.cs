@@ -17,28 +17,6 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
     private readonly ScryfallApiClient _scryfallApiClient = scryfallApiClient;
 
 
-    public async Task<DeckDetailsDTO?> GetDeckWithCardPrintDetails(int deckId)
-    {
-        DeckDetailsDTO? deck = null;
-        
-        var deckDto = await _archidektApiClient.GetDeck(deckId);
-        if (deckDto is null)
-        {
-            _logger.LogError("Deck not loaded from internet");
-            return deck;
-        }
-        if (deckDto.Cards is null || deckDto.Cards.Count == 0)
-        {
-            _logger.LogError("Deck is empty");
-            return deck;
-        }
-
-        deck = new DeckDetailsDTO { Name = deckDto.Name!, Cards = ParseCardsToDeck(deckDto.Cards!) };
-
-        await UpdateCardImageLinks(deck.Cards);
-
-        return deck;
-    }
 
     public async Task DownloadCardSideImage(string imageUrl, string folderPath, string filename, int quantity)
     {
@@ -58,6 +36,29 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
         {
             _logger.LogError(ex, "Error in downloading image from the Scryfall");
         }
+    }
+
+    public async Task<DeckDetailsDTO?> GetDeckWithCardPrintDetails(int deckId)
+    {
+        DeckDetailsDTO? deck = null;
+
+        var deckDto = await _archidektApiClient.GetDeck(deckId);
+        if (deckDto is null)
+        {
+            _logger.LogError("Deck not loaded from internet");
+            return deck;
+        }
+        if (deckDto.Cards is null || deckDto.Cards.Count == 0)
+        {
+            _logger.LogError("Deck is empty");
+            return deck;
+        }
+
+        deck = new DeckDetailsDTO { Name = deckDto.Name!, Cards = ParseCardsToDeck(deckDto.Cards!) };
+
+        await UpdateCardImageLinks(deck.Cards);
+
+        return deck;
     }
 
     public bool TryExtractDeckIdFromUrl(string url, out int deckId)
@@ -81,45 +82,15 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
         return false;
     }
 
-    
-    private HashSet<CardEntryDTO> ParseCardsToDeck(ICollection<DeckCardDTO> cardList)
-    {
-        HashSet<CardEntryDTO> deckCards = []; 
-        foreach (var card in cardList)
-        {
-            var cardName = card.Card?.OracleCard?.Name;
-            if (cardName is null || card.Quantity <= 0)
-            {
-                continue;
-            }
-
-            if (deckCards.Any(c => c.Name == cardName))
-            {
-                var cardEntry = deckCards.First(c => c.Name == cardName);
-                cardEntry.Quantity++;
-            }
-            else
-            {
-                deckCards.Add(new CardEntryDTO
-                {
-                    Name = cardName,
-                    Quantity = card.Quantity
-                });
-            }
-        }
-
-        return deckCards;
-    }
-
-    private async Task UpdateCardImageLinks(HashSet<CardEntryDTO> cards)
+    public async Task UpdateCardImageLinks(List<CardEntryDTO> cards)
     {
         try
         {
-            int count = cards.Count();
+            int count = cards.Count;
             int step = UpdateStep(0, count);
             foreach (var card in cards)
             {
-                var images = await GetCardImageUrls(card.Name);
+                var images = await GetCardImageUrls(card);
                 if (images != null)
                 {
                     card.CardSides = images;
@@ -133,44 +104,84 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
         }
     }
 
-    private async Task<HashSet<CardSideDTO>?> GetCardImageUrls(string cardName)
+
+    private List<CardEntryDTO> ParseCardsToDeck(ICollection<DeckCardDTO> cardList)
     {
-        var cardSearch = await _scryfallApiClient.SearchCard(cardName);
+        List<CardEntryDTO> deckCards = []; 
+        foreach (var card in cardList)
+        {
+            var cardName = card.Card?.OracleCard?.Name;
+            if (cardName is null || card.Quantity <= 0)
+            {
+                continue;
+            }
+
+            deckCards.Add(new CardEntryDTO
+            {
+                Name = cardName,
+                Quantity = card.Quantity,
+                CollectorNumber = card.Card?.CollectorNumber,
+                ExpansionCode = card.Card?.Edition?.EditionCode,
+                Art = string.Equals(card.Card?.OracleCard?.Layout, "art_series", StringComparison.OrdinalIgnoreCase),
+                Etched = string.Equals(card.Modifier, "Etched", StringComparison.OrdinalIgnoreCase),
+                Foil = string.Equals(card.Modifier, "Foil", StringComparison.OrdinalIgnoreCase),
+            });
+        }
+
+        return deckCards;
+    }
+
+    private async Task<HashSet<CardSideDTO>?> GetCardImageUrls(CardEntryDTO card)
+    {
+        var cardSearch = await _scryfallApiClient.FindCard(card);
 
         HashSet<CardSideDTO> cardSides = [];
 
         // Look for searched card in the search result
-        var searchedCard = cardSearch?.Data?.FirstOrDefault(c => c.Name != null && c.Name.Equals(cardName, StringComparison.OrdinalIgnoreCase));
+        var searchedCard = cardSearch?.Data?.FirstOrDefault(c => 
+            c != null && c.Name != null && c.Name.Equals(card.Name, StringComparison.OrdinalIgnoreCase) // Find by name
+            && ((!card.Etched) || (card.Etched && c.TcgplayerEtchedId is not null)) // Find etched frame if required
+            && card.ExpansionCode is not null && string.Equals(card.ExpansionCode, c.Set) // Find by expansion if required
+            );
         if (searchedCard is null)
         {
-            _logger.LogWarning("Card {cardName} was not found in the Scryfall database", cardName);
+            _logger.LogWarning("Card {Name} was not found in the Scryfall database", card.Name);
             return null;
         }
         
         // Handle two dual side cards as well
-        if (searchedCard.Card_faces is not null)
+        if (searchedCard.CardFaces is not null)
         {
-            foreach (var cardFace in searchedCard.Card_faces)
+            foreach (var cardFace in searchedCard.CardFaces)
             {
-                if (cardFace.Image_uris is null)
+                if (cardFace.ImageUris is null)
                 {
                     continue;
                 }
 
-                cardSides.Add(new CardSideDTO { Name = cardFace.Name ?? string.Empty, ImageUrl = cardFace.Image_uris?.Large ?? string.Empty });
+                cardSides.Add(new CardSideDTO { Name = cardFace.Name ?? string.Empty, ImageUrl = cardFace.ImageUris?.Large ?? string.Empty });
             }
+        }
+
+        var nameSplit = card.Name.Split(" // ");
+        // Remove back side of art as it is simple placeholder
+        if ((card.Art || 
+            (nameSplit.Count() > 1 && nameSplit[0] == nameSplit[1])) 
+            && cardSides.Count > 0)
+        {
+            cardSides = [cardSides.First()];
         }
 
         // Single page card
         if (cardSides.Count == 0 || cardSides.Any(i => string.IsNullOrEmpty(i.Name) || string.IsNullOrEmpty(i.ImageUrl)))
         {
             cardSides.Clear();
-            if (searchedCard.Image_uris?.Large is null)
+            if (searchedCard.ImageUris?.Large is null)
             {
-                _logger.LogError("Card {cardName} does not have any url to its picture", cardName);
+                _logger.LogError("Card {Name} does not have any url to its picture", card.Name);
                 return null;
             }
-            cardSides.Add(new CardSideDTO { Name = cardName, ImageUrl = searchedCard.Image_uris.Large });
+            cardSides.Add(new CardSideDTO { Name = card.Name, ImageUrl = searchedCard.ImageUris.Large });
         }
 
         return cardSides;

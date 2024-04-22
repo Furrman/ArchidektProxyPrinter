@@ -3,10 +3,10 @@ using Microsoft.Extensions.Logging;
 
 namespace Library.IO;
 
-public class CardListFileParser(ILogger<CardListFileParser> logger, FileManager fileManager)
+public class CardListFileParser(ILogger<CardListFileParser> logger, IFileManager fileManager)
 {
     private readonly ILogger<CardListFileParser> _logger = logger;
-    private readonly FileManager _fileManager = fileManager;
+    private readonly IFileManager _fileManager = fileManager;
 
     public DeckDetailsDTO GetDeckFromFile(string filePath)
     {
@@ -15,25 +15,20 @@ public class CardListFileParser(ILogger<CardListFileParser> logger, FileManager 
         try
         {
             deck.Name = _fileManager.GetFilename(filePath);
-            using var reader = new StreamReader(filePath);
-            string? line;
-            while ((line = reader.ReadLine()) != null)
+            var lines = _fileManager.GetLinesFromTextFile(filePath);
+            if (lines == null)
             {
-                if (!string.IsNullOrWhiteSpace(line))
-                {
-                    continue;
-                }
-                // TODO Add support for more complex file exporter from Archidekt
+                return deck;
+            }
+
+            foreach (var line in lines)
+            {
                 var cardData = ParseLine(line);
                 if (cardData == null)
                 {
                     continue;
                 }
-                deck.Cards.Add(new CardEntryDTO
-                {
-                    Name = cardData.Value.Item1,
-                    Quantity = cardData.Value.Item2
-                });
+                deck.Cards.Add(cardData);
             }
         }
         catch (Exception ex)
@@ -45,28 +40,52 @@ public class CardListFileParser(ILogger<CardListFileParser> logger, FileManager 
     }
 
 
-    private (string, int)? ParseLine(string line)
+    private static CardEntryDTO? ParseLine(string line)
     {
-        int quantity;
-        string cardName;
+        var cardEntry = new CardEntryDTO();
+
+        // Split line into parts
         string[] parts = line.Split(' ');
+        int nameStartIndex = line.IndexOf(' ') + 1;
 
-        if (parts.Length >= 2)
+        // Parse quantity
+        string quantityPart = parts[0];
+        if (quantityPart.Length > 1 && quantityPart.Contains('x'))
         {
-            if (int.TryParse(parts[0], out quantity))
-            {
-                cardName = string.Join(" ", parts, 1, parts.Length - 1);
-            }
-            else
-            {
-                return null;
-            }
+            quantityPart = quantityPart.Remove(quantityPart.Length - 1); // Remove last character from quantity
         }
-        else
+        if (!int.TryParse(quantityPart, out int quantity))
         {
-            return null;
+            quantity = 1;
+            nameStartIndex = 0;
+        }
+        cardEntry.Quantity = quantity;
+
+        // Find index of optional parts
+        int expansionStartIndex = line.IndexOf('(');
+        int expansionEndIndex = line.IndexOf(')');
+        int foilIndex = line.IndexOf("*F*");
+        int etchedIndex = line.IndexOf("*E*");
+
+        // Parse card name
+        int[] optionalElementIndexes = { expansionStartIndex, foilIndex, etchedIndex };
+        int nameEndIndex = optionalElementIndexes.Where(n => n != -1).DefaultIfEmpty(line.Length).Min();
+        cardEntry.Name = line[nameStartIndex..nameEndIndex].TrimEnd();
+
+        // Parse optional parts
+        if (expansionStartIndex != -1)
+        {
+            cardEntry.ExpansionCode = line[(expansionStartIndex + 1)..expansionEndIndex].TrimEnd();
+        }
+        if (foilIndex != -1)
+        {
+            cardEntry.Foil = true;
+        }
+        if (etchedIndex != -1)
+        {
+            cardEntry.Etched = true;
         }
 
-        return (cardName, quantity);
+        return cardEntry;
     }
 }
