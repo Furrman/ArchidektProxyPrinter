@@ -144,7 +144,7 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
             );
         if (searchedCard is null)
         {
-            _logger.LogWarning("Card {card.Name} was not found in the Scryfall database", card.Name);
+            _logger.LogWarning("Card {Name} was not found in the Scryfall database", card.Name);
             return null;
         }
         
