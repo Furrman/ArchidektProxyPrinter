@@ -10,6 +10,8 @@ If so, then this application is for you! It allows you to generate a printable a
 - Get deck list from exported file
 - Add cards number of times per number of quantity
 - Print dual side cards
+- Download cards from specified expansion and specific card version
+- Support art cards
 - Save cards resized and adjusted for printing in editable Word .docx format
 - Option to store original images alongside created document
 - Logs in separate file showing errors in receiving data
@@ -17,14 +19,19 @@ If so, then this application is for you! It allows you to generate a printable a
 
 ## Plans
 
-- Download cards from specified expansion or specific version
-- Support all export types from Archidekt
-- Download tokens (Archidekt is not supporting tokens https://archidekt.com/forum/thread/884003/1 )
+- Add support for card in specific language
 - Produce read-only PDF document instead of Word
 - Create Web version in ASP.NET API with Blazor
 - Host Web version via Github Pages
 - Build Web version via Github Actions
 - Support to other tools like Moxfield or MTGGoldfish
+
+## Limitation
+
+- Download tokens not supported (Archidekt is not supporting tokens https://archidekt.com/forum/thread/884003/1 )
+- Custom cards are not supported (Archidekt does not support unofficial cards)
+- Foil version of non unique card arts are not supported (Scryfall API that provide high quality foil card images except etched foil and unique foiled arts)
+- Import based on file exported from Archidekt does not support specific card version (missing *card number* information in exported file)
 
 ## Usage
 
