@@ -67,6 +67,6 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: "ArchidektProxyPrinter*"
-          tag_name: ${{ github.event.inputs.tag_name || github.ref_name }}
+          tag_name: ${{ github.ref_name || github.event.inputs.tag_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
