@@ -8,14 +8,58 @@ using Library.Models.Events;
 
 namespace Library.Services;
 
-public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClient archidektApiClient, ScryfallApiClient scryfallApiClient)
+/// <summary>
+/// Represents a service for interacting with Magic cards.
+/// </summary>
+public interface IMagicCardService
+{
+    /// <summary>
+    /// Event that is raised to report the progress of getting deck details.
+    /// </summary>
+    event EventHandler<GetDeckDetailsProgressEventArgs>? GetDeckDetailsProgress;
+
+    /// <summary>
+    /// Downloads the image of a card side.
+    /// </summary>
+    /// <param name="imageUrl">The URL of the image to download.</param>
+    /// <param name="folderPath">The path to the folder where the image will be saved.</param>
+    /// <param name="filename">The name of the image file.</param>
+    /// <param name="quantity">The quantity of the card side.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    Task DownloadCardSideImage(string imageUrl, string folderPath, string filename, int quantity);
+
+    /// <summary>
+    /// Gets the deck details along with card print details.
+    /// </summary>
+    /// <param name="deckId">The ID of the deck.</param>
+    /// <param name="languageCode">The language code for localization (optional).</param>
+    /// <returns>A task representing the asynchronous operation. The task result contains the deck details DTO, or null if not found.</returns>
+    Task<DeckDetailsDTO?> GetDeckWithCardPrintDetails(int deckId, string? languageCode = null);
+
+    /// <summary>
+    /// Tries to extract the deck ID from a URL.
+    /// </summary>
+    /// <param name="url">The URL to extract the deck ID from.</param>
+    /// <param name="deckId">When this method returns, contains the extracted deck ID if successful, or 0 if unsuccessful.</param>
+    /// <returns>true if the deck ID was successfully extracted from the URL; otherwise, false.</returns>
+    bool TryExtractDeckIdFromUrl(string url, out int deckId);
+
+    /// <summary>
+    /// Updates the card image links.
+    /// </summary>
+    /// <param name="cards">The list of card entries to update.</param>
+    /// <param name="languageCode">The language code for localization (optional).</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    Task UpdateCardImageLinks(List<CardEntryDTO> cards, string? languageCode = null);
+}
+
+public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClient archidektApiClient, ScryfallApiClient scryfallApiClient) : IMagicCardService
 {
     public event EventHandler<GetDeckDetailsProgressEventArgs>? GetDeckDetailsProgress;
 
     private readonly ILogger<MagicCardService> _logger = logger;
     private readonly ArchidektApiClient _archidektApiClient = archidektApiClient;
     private readonly ScryfallApiClient _scryfallApiClient = scryfallApiClient;
-
 
 
     public async Task DownloadCardSideImage(string imageUrl, string folderPath, string filename, int quantity)

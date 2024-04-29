@@ -14,7 +14,7 @@ public static class Setup
             .AddScoped<ArchidektApiClient>()
             .AddScoped<ScryfallApiClient>()
             .AddScoped<CardListFileParser>()
-            .AddScoped<MagicCardService>()
+            .AddScoped<IMagicCardService, MagicCardService>()
             .AddScoped<WordGeneratorService>()
             .AddScoped<ILanguageService, LanguageService>()
             .AddScoped<IFileManager, FileManager>()
