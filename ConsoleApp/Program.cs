@@ -68,7 +68,7 @@ internal class Program
                 return;
             }
 
-            var archidektPrinter = serviceProvider.GetService<ArchidektPrinter>()!;
+            var archidektPrinter = serviceProvider.GetService<IArchidektPrinter>()!;
             archidektPrinter.ProgressUpdate += UpdateProgressOnConsole;
             archidektPrinter.GenerateWord(deckId, deckFilePath, outputPath, outputFileName, storeOriginalImages).Wait();
         });

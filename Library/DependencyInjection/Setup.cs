@@ -10,7 +10,7 @@ public static class Setup
     public static IServiceCollection SetupLibraryClasses(this IServiceCollection services)
     {
         return services
-            .AddScoped<ArchidektPrinter>()
+            .AddScoped<IArchidektPrinter, ArchidektPrinter>()
             .AddScoped<ArchidektApiClient>()
             .AddScoped<ScryfallApiClient>()
             .AddScoped<CardListFileParser>()

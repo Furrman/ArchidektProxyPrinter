@@ -5,7 +5,49 @@ using Library.Services;
 
 namespace Library;
 
-public class ArchidektPrinter
+/// <summary>
+/// Represents a printer for generating Word documents from Archidekt deck data.
+/// </summary>
+public interface IArchidektPrinter
+{
+    /// <summary>
+    /// Event that is raised to provide progress updates during the generation process.
+    /// </summary>
+    event EventHandler<UpdateProgressEventArgs>? ProgressUpdate;
+
+    /// <summary>
+    /// Generates a Word document from the specified deck data.
+    /// </summary>
+    /// <param name="deckId">The ID of the deck to generate the document for. If null, the deck will be loaded from the input file path.</param>
+    /// <param name="inputFilePath">The path to the input file containing the deck data. If null, the deck will be loaded from the deck ID.</param>
+    /// <param name="outputPath">The path to save the generated Word document. If null, the document will be saved in the default output directory.</param>
+    /// <param name="outputFileName">The name of the generated Word document. If null, a default name will be used.</param>
+    /// <param name="saveImages">Specifies whether to save card images in the document. Default is false.</param>
+    /// <returns>A task representing the asynchronous generation process.</returns>
+    Task GenerateWord(int? deckId = null, string? inputFilePath = null, string? outputPath = null, string? outputFileName = null, bool saveImages = false);
+
+    /// <summary>
+    /// Generates a Word document from the specified deck ID.
+    /// </summary>
+    /// <param name="deckId">The ID of the deck to generate the document for.</param>
+    /// <param name="outputPath">The path to save the generated Word document. If null, the document will be saved in the default output directory.</param>
+    /// <param name="outputFileName">The name of the generated Word document. If null, a default name will be used.</param>
+    /// <param name="saveImages">Specifies whether to save card images in the document. Default is false.</param>
+    /// <returns>A task representing the asynchronous generation process.</returns>
+    Task GenerateWord(int deckId, string? outputPath = null, string? outputFileName = null, bool saveImages = false);
+
+    /// <summary>
+    /// Generates a Word document from the specified deck list file.
+    /// </summary>
+    /// <param name="deckListFilePath">The path to the file containing the deck list.</param>
+    /// <param name="outputPath">The path to save the generated Word document. If null, the document will be saved in the default output directory.</param>
+    /// <param name="outputFileName">The name of the generated Word document. If null, a default name will be used.</param>
+    /// <param name="saveImages">Specifies whether to save card images in the document. Default is false.</param>
+    /// <returns>A task representing the asynchronous generation process.</returns>
+    Task GenerateWord(string deckListFilePath, string? outputPath = null, string? outputFileName = null, bool saveImages = false);
+}
+
+public class ArchidektPrinter : IArchidektPrinter
 {
     public event EventHandler<UpdateProgressEventArgs>? ProgressUpdate;
 
