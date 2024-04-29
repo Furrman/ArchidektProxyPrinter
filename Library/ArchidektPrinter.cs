@@ -93,9 +93,11 @@ public class ArchidektPrinter : IArchidektPrinter
 
     public async Task GenerateWord(string deckListFilePath, string? outputPath = null, string? outputFileName = null, bool saveImages = false)
     {
-        var cardList = _fileParser.GetDeckFromFile(deckListFilePath);
+        var deck = _fileParser.GetDeckFromFile(deckListFilePath);
+        await _magicCardService.UpdateCardImageLinks(deck.Cards);
+
         outputFileName ??= _fileManager.GetFilename(deckListFilePath);
-        await GenerateWord(cardList, outputPath, outputFileName, saveImages);
+        await GenerateWord(deck, outputPath, outputFileName, saveImages);
     }
 
 
@@ -109,8 +111,6 @@ public class ArchidektPrinter : IArchidektPrinter
 
         outputPath = _fileManager.CreateOutputFolder(outputPath);
         var wordFilePath = _fileManager.ReturnCorrectWordFilePath(outputPath, outputFileName);
-
-        await _magicCardService.UpdateCardImageLinks(deck.Cards);
 
         await _wordGeneratorService.GenerateWord(deck, outputPath, wordFilePath, saveImages);
     }
