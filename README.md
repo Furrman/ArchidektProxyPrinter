@@ -13,20 +13,24 @@ If so, then this application is for you! It allows you to generate a printable a
 - Download cards from specified expansion and specific card version
 - Support art cards
 - Save cards resized and adjusted for printing in editable Word .docx format
+- Option to download all cards in specific language (cards not found in given language will be replaced with default english language)
 - Option to store original images alongside created document
 - Logs in separate file showing errors in receiving data
 - Show % progress status in console app
 
 ## Plans
 
+- Options to add tokens that are generated from cards in the deck
+- Produce read-only PDF document instead of Word
 - Create Web version in ASP.NET API with Blazor
 - Host Web version via Github Pages
 - Build Web version via Github Actions
-- Support to other tools like Moxfield or MTGGoldfish
+- Support to other tools like Moxfield, EDHREC, MTGArena or MTGGoldfish
 
 ## Limitation
 
 - Download tokens not supported (Archidekt is not supporting tokens https://archidekt.com/forum/thread/884003/1 )
+- Download selected cards in specific language not supported (Archidekt does not support card language selection)
 - Custom cards are not supported (Archidekt does not support unofficial cards)
 - Foil version of non unique card arts are not supported (Scryfall API that provide high quality foil card images except etched foil and unique foiled arts)
 - Import based on file exported from Archidekt does not support specific card version (missing *card number* information in exported file)

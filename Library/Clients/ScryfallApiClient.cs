@@ -38,19 +38,19 @@ public class ScryfallApiClient
         }
     }
 
-    public async Task<CardSearchDTO?> FindCard(CardEntryDTO card) => 
-        card.ExpansionCode != null && card.CollectorNumber != null
-            ? new() { Data = [await GetCard(card.Name, card.ExpansionCode, card.CollectorNumber)] }
-            : await SearchCard(card.Name, card.ExpansionCode is not null || card.Etched || card.Art);
-
-
-    private async Task<CardSearchDTO?> SearchCard(string cardName, bool extended)
+    public async Task<CardDataDTO?> FindCard(string cardName, string expansionCode, string collectorNumber, string? languageCode = null)
     {
-        CardSearchDTO? cardSearch = null;
-        var requestUrl = $"/cards/search?q=${cardName}";
-        if (extended)
+        CardDataDTO? cardSearch = null;
+        var searchSpecificCard = expansionCode != null && collectorNumber != null;
+        if (!searchSpecificCard)
         {
-            requestUrl += "&unique=prints&include_extras=true";
+            _logger.LogWarning("Missing ExpansionCode and CollectorNumber for the card '{cardName}'", cardName);
+            return null;
+        }
+        var requestUrl = $"/cards/{expansionCode}/{collectorNumber}";
+        if (languageCode is not null)
+        {
+            requestUrl += $"/{languageCode}";
         }
 
         try
@@ -59,7 +59,7 @@ public class ScryfallApiClient
 
             if (response.IsSuccessStatusCode)
             {
-                cardSearch = await response.Content.ReadFromJsonAsync<CardSearchDTO>();
+                cardSearch = await response.Content.ReadFromJsonAsync<CardDataDTO>();
             }
             else if (response.StatusCode == HttpStatusCode.NotFound)
             {
@@ -78,23 +78,26 @@ public class ScryfallApiClient
         return cardSearch;
     }
 
-    private async Task<CardDataDTO?> GetCard(string cardName, string expansionCode, string collectorNumber)
+    public async Task<CardSearchDTO?> SearchCard(string cardName, bool includeExtras, bool includeMultilingual)
     {
-        CardDataDTO? cardSearch = null;
-        var searchSpecificCard = expansionCode != null && collectorNumber != null;
-        if (!searchSpecificCard)
+        CardSearchDTO? cardSearch = null;
+        var requestUrl = $"/cards/search?q=${cardName}";
+        if (includeExtras)
         {
-            _logger.LogWarning("Missing ExpansionCode and CollectorNumber for the card '{cardName}'", cardName);
-            return null;
+            requestUrl += "&unique=prints&include_extras=true&include_variations=true";
         }
-        var requestUrl = $"/cards/{expansionCode}/{collectorNumber}";
+        if (includeMultilingual)
+        {
+            requestUrl += "&include_multilingual=true";
+        }
+
         try
         {
             var response = await _httpClient.GetAsync(requestUrl);
 
             if (response.IsSuccessStatusCode)
             {
-                cardSearch = await response.Content.ReadFromJsonAsync<CardDataDTO>();
+                cardSearch = await response.Content.ReadFromJsonAsync<CardSearchDTO>();
             }
             else if (response.StatusCode == HttpStatusCode.NotFound)
             {

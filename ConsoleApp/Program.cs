@@ -20,8 +20,9 @@ internal class Program
         CoconoaApp.Run(([CoconoaOptions(Description = "Filepath to exported deck from Archidekt")] string? deckFilePath,
             [CoconoaOptions(Description = "ID of the deck in Archidekt")] int? deckId,
             [CoconoaOptions(Description = "URL link to deck in Archidekt")]string? deckUrl,
-            [CoconoaOptions(Description = "Directory path to output file(s)")]string? outputPath,
-            [CoconoaOptions(Description = "Filename of the output word file")]string? outputFileName,
+            [CoconoaOptions(Description = "Set language for all cards to print")] string languageCode = "en",
+            [CoconoaOptions(Description = "Directory path to output file(s)")]string? outputPath = null,
+            [CoconoaOptions(Description = "Filename of the output word file")]string? outputFileName = null,
             [CoconoaOptions(Description = "Flag to store original images in the same folder as output file")] bool storeOriginalImages = false) =>
         {
             if (deckFilePath is not null)
@@ -42,8 +43,8 @@ internal class Program
             }
             else if (deckUrl is not null)
             {
-                var magicCardService = serviceProvider.GetService<MagicCardService>()!;
-                if (!magicCardService.TryExtractDeckIdFromUrl(deckUrl, out var urlDeckId) || urlDeckId <= 0)
+                var archidektService = serviceProvider.GetService<IArchidektService>()!;
+                if (!archidektService.TryExtractDeckIdFromUrl(deckUrl, out var urlDeckId) || urlDeckId <= 0)
                 {
                     ConsoleUtility.WriteErrorMessage("You have to specify correct URL to your deck hosted by Archidekt.");
                     return;
@@ -59,9 +60,17 @@ internal class Program
                 return;
             }
 
-            var archidektPrinter = serviceProvider.GetService<ArchidektPrinter>()!;
+            var languageService = serviceProvider.GetService<ILanguageService>()!;
+            if (languageService.IsValidLanguage(languageCode) == false)
+            {
+                ConsoleUtility.WriteErrorMessage("You have to specify correct language code.");
+                ConsoleUtility.WriteErrorMessage($"Language codes: {languageService.AvailableLanguages}");
+                return;
+            }
+
+            var archidektPrinter = serviceProvider.GetService<IArchidektPrinter>()!;
             archidektPrinter.ProgressUpdate += UpdateProgressOnConsole;
-            archidektPrinter.GenerateWord(deckId, deckFilePath, outputPath, outputFileName, storeOriginalImages).Wait();
+            archidektPrinter.GenerateWord(deckId, deckFilePath, outputPath, outputFileName, languageCode, storeOriginalImages).Wait();
         });
     }
 

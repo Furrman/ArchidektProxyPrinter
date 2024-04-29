@@ -77,7 +77,7 @@ public class FileManager : IFileManager
 
     public string CreateOutputFolder(string? path)
     {
-        path ??= Path.Combine(Directory.GetCurrentDirectory(), Constants.DEFAULT_FOLDER_NAME);
+        path ??= Path.Combine(Directory.GetCurrentDirectory(), FilePaths.DEFAULT_FOLDER_NAME);
 
         if (!Directory.Exists(path))
         {
@@ -128,7 +128,7 @@ public class FileManager : IFileManager
         }
 
         return Path.Combine(Directory.GetCurrentDirectory(),
-            Constants.DEFAULT_FOLDER_NAME,
-            deckName != null ? $"{deckName}.docx" : Constants.DEFAULT_WORD_FILE_NAME);
+            FilePaths.DEFAULT_FOLDER_NAME,
+            deckName != null ? $"{deckName}.docx" : FilePaths.DEFAULT_WORD_FILE_NAME);
     }
 }
