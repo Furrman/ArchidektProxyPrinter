@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NLog.Config;
-using NLog;
 using NLog.Extensions.Logging;
 
 namespace ConsoleApp.Configuration;
@@ -12,13 +11,14 @@ internal static class NLogConfigurator
     {
         string executablePath = AppDomain.CurrentDomain.BaseDirectory;
         string configFilePath = Path.Combine(executablePath, "nlog.config");
-        LogManager.Configuration = new XmlLoggingConfiguration(configFilePath);
+        var nlogConfig = new XmlLoggingConfiguration(configFilePath);
+        
         return serviceCollection
             .AddLogging(builder =>
             {
                 builder.ClearProviders();
-                builder.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
-                builder.AddNLog(new NLogProviderOptions
+                builder.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Warning);
+                builder.AddNLog(nlogConfig, new NLogProviderOptions
                 {
                     CaptureMessageProperties = true,
                     CaptureMessageTemplates = true
