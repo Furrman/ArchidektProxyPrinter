@@ -22,9 +22,10 @@ public interface IArchidektPrinter
     /// <param name="inputFilePath">The path to the input file containing the deck data. If null, the deck will be loaded from the deck ID.</param>
     /// <param name="outputPath">The path to save the generated Word document. If null, the document will be saved in the default output directory.</param>
     /// <param name="outputFileName">The name of the generated Word document. If null, a default name will be used.</param>
+    /// <param name="languageCode">The language code to be used for generating the Word document. If null, the default language code will be used.</param>
     /// <param name="saveImages">Specifies whether to save card images in the document. Default is false.</param>
     /// <returns>A task representing the asynchronous generation process.</returns>
-    Task GenerateWord(int? deckId = null, string? inputFilePath = null, string? outputPath = null, string? outputFileName = null, bool saveImages = false);
+    Task GenerateWord(int? deckId = null, string? inputFilePath = null, string? outputPath = null, string? outputFileName = null, string? languageCode = null, bool saveImages = false);
 
     /// <summary>
     /// Generates a Word document from the specified deck ID.
@@ -32,9 +33,10 @@ public interface IArchidektPrinter
     /// <param name="deckId">The ID of the deck to generate the document for.</param>
     /// <param name="outputPath">The path to save the generated Word document. If null, the document will be saved in the default output directory.</param>
     /// <param name="outputFileName">The name of the generated Word document. If null, a default name will be used.</param>
+    /// <param name="languageCode">The language code to be used for generating the Word document. If null, the default language code will be used.</param>
     /// <param name="saveImages">Specifies whether to save card images in the document. Default is false.</param>
     /// <returns>A task representing the asynchronous generation process.</returns>
-    Task GenerateWord(int deckId, string? outputPath = null, string? outputFileName = null, bool saveImages = false);
+    Task GenerateWord(int deckId, string? outputPath = null, string? outputFileName = null, string? languageCode = null, bool saveImages = false);
 
     /// <summary>
     /// Generates a Word document from the specified deck list file.
@@ -44,7 +46,7 @@ public interface IArchidektPrinter
     /// <param name="outputFileName">The name of the generated Word document. If null, a default name will be used.</param>
     /// <param name="saveImages">Specifies whether to save card images in the document. Default is false.</param>
     /// <returns>A task representing the asynchronous generation process.</returns>
-    Task GenerateWord(string deckListFilePath, string? outputPath = null, string? outputFileName = null, bool saveImages = false);
+    Task GenerateWord(string deckListFilePath, string? outputPath = null, string? outputFileName = null, string? languageCode = null, bool saveImages = false);
 }
 
 public class ArchidektPrinter : IArchidektPrinter
@@ -72,16 +74,27 @@ public class ArchidektPrinter : IArchidektPrinter
         _wordGeneratorService.GenerateWordProgress += UpdateGenerateWord;
     }
 
-    public async Task GenerateWord(int? deckId = null, string? inputFilePath = null, string? outputPath = null, string? outputFileName = null, bool saveImages = false)
+    public async Task GenerateWord(
+        int? deckId = null, 
+        string? inputFilePath = null, 
+        string? outputPath = null, 
+        string? outputFileName = null,
+        string? languageCode = null,
+        bool saveImages = false)
     {
-        if (deckId != null) await GenerateWord(deckId!.Value, outputPath, outputFileName, saveImages);
-        else if (inputFilePath != null) await GenerateWord(inputFilePath, outputPath, outputFileName, saveImages);
+        if (deckId != null) await GenerateWord(deckId!.Value, outputPath, outputFileName, languageCode, saveImages);
+        else if (inputFilePath != null) await GenerateWord(inputFilePath, outputPath, outputFileName, languageCode, saveImages);
         else throw new ArgumentException("DeckId has to be bigger than 0 or WordFilePath has to be corrected");
     }
 
-    public async Task GenerateWord(int deckId, string? outputPath = null, string? outputFileName = null, bool saveImages = false)
+    public async Task GenerateWord(
+        int deckId, 
+        string? outputPath = null, 
+        string? outputFileName = null, 
+        string? languageCode = null,
+        bool saveImages = false)
     {
-        var deckDetails = await _magicCardService.GetDeckWithCardPrintDetails(deckId);
+        var deckDetails = await _magicCardService.GetDeckWithCardPrintDetails(deckId, languageCode);
         if (deckDetails is null)
         {
             RaiseError("Getting deck details returned error");
@@ -91,10 +104,15 @@ public class ArchidektPrinter : IArchidektPrinter
         await GenerateWord(deckDetails, outputPath, outputFileName ?? deckDetails.Name, saveImages);
     }
 
-    public async Task GenerateWord(string deckListFilePath, string? outputPath = null, string? outputFileName = null, bool saveImages = false)
+    public async Task GenerateWord(
+        string deckListFilePath, 
+        string? outputPath = null, 
+        string? outputFileName = null, 
+        string? languageCode = null,
+        bool saveImages = false)
     {
         var deck = _fileParser.GetDeckFromFile(deckListFilePath);
-        await _magicCardService.UpdateCardImageLinks(deck.Cards);
+        await _magicCardService.UpdateCardImageLinks(deck.Cards, languageCode);
 
         outputFileName ??= _fileManager.GetFilename(deckListFilePath);
         await GenerateWord(deck, outputPath, outputFileName, saveImages);

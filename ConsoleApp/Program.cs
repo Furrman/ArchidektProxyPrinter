@@ -70,7 +70,7 @@ internal class Program
 
             var archidektPrinter = serviceProvider.GetService<IArchidektPrinter>()!;
             archidektPrinter.ProgressUpdate += UpdateProgressOnConsole;
-            archidektPrinter.GenerateWord(deckId, deckFilePath, outputPath, outputFileName, storeOriginalImages).Wait();
+            archidektPrinter.GenerateWord(deckId, deckFilePath, outputPath, outputFileName, languageCode, storeOriginalImages).Wait();
         });
     }
 

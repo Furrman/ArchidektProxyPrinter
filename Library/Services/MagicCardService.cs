@@ -38,7 +38,7 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
         }
     }
 
-    public async Task<DeckDetailsDTO?> GetDeckWithCardPrintDetails(int deckId)
+    public async Task<DeckDetailsDTO?> GetDeckWithCardPrintDetails(int deckId, string? languageCode = null)
     {
         DeckDetailsDTO? deck = null;
 
@@ -82,7 +82,7 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
         return false;
     }
 
-    public async Task UpdateCardImageLinks(List<CardEntryDTO> cards)
+    public async Task UpdateCardImageLinks(List<CardEntryDTO> cards, string? languageCode = null)
     {
         try
         {
