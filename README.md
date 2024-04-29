@@ -34,6 +34,7 @@ If so, then this application is for you! It allows you to generate a printable a
 - Custom cards are not supported (Archidekt does not support unofficial cards)
 - Foil version of non unique card arts are not supported (Scryfall API that provide high quality foil card images except etched foil and unique foiled arts)
 - Import based on file exported from Archidekt does not support specific card version (missing *card number* information in exported file)
+- Supports only cards in english or unique version of cards (Archidekt is not supporting different card language versions https://archidekt.com/forum/thread/2627536/1 )
 
 ## Usage
 
