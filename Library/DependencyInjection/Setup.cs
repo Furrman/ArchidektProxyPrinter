@@ -11,13 +11,17 @@ public static class Setup
     {
         return services
             .AddScoped<IArchidektPrinter, ArchidektPrinter>()
+            // Clients
             .AddScoped<ArchidektApiClient>()
             .AddScoped<ScryfallApiClient>()
+            // IO
             .AddScoped<CardListFileParser>()
+            .AddScoped<IFileManager, FileManager>()
+            // Services
+            .AddScoped<IArchidektService, ArchidektService>()
+            .AddScoped<ILanguageService, LanguageService>()
             .AddScoped<IMagicCardService, MagicCardService>()
             .AddScoped<WordGeneratorService>()
-            .AddScoped<ILanguageService, LanguageService>()
-            .AddScoped<IFileManager, FileManager>()
         ;
     }
 }
