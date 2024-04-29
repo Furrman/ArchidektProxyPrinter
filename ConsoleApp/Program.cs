@@ -20,8 +20,9 @@ internal class Program
         CoconoaApp.Run(([CoconoaOptions(Description = "Filepath to exported deck from Archidekt")] string? deckFilePath,
             [CoconoaOptions(Description = "ID of the deck in Archidekt")] int? deckId,
             [CoconoaOptions(Description = "URL link to deck in Archidekt")]string? deckUrl,
-            [CoconoaOptions(Description = "Directory path to output file(s)")]string? outputPath,
-            [CoconoaOptions(Description = "Filename of the output word file")]string? outputFileName,
+            [CoconoaOptions(Description = "Set language for all cards to print")] string languageCode = "en",
+            [CoconoaOptions(Description = "Directory path to output file(s)")]string? outputPath = null,
+            [CoconoaOptions(Description = "Filename of the output word file")]string? outputFileName = null,
             [CoconoaOptions(Description = "Flag to store original images in the same folder as output file")] bool storeOriginalImages = false) =>
         {
             if (deckFilePath is not null)
@@ -56,6 +57,14 @@ internal class Program
                 - path to exported deck
                 - deck id
                 - url to your deck.");
+                return;
+            }
+
+            var languageService = serviceProvider.GetService<ILanguageService>()!;
+            if (languageService.IsValidLanguage(languageCode) == false)
+            {
+                ConsoleUtility.WriteErrorMessage("You have to specify correct language code.");
+                ConsoleUtility.WriteErrorMessage($"Language codes: {languageService.AvailableLanguages}");
                 return;
             }
 

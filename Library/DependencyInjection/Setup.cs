@@ -16,6 +16,7 @@ public static class Setup
             .AddScoped<CardListFileParser>()
             .AddScoped<MagicCardService>()
             .AddScoped<WordGeneratorService>()
+            .AddScoped<ILanguageService, LanguageService>()
             .AddScoped<IFileManager, FileManager>()
         ;
     }

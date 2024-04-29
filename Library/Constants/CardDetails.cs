@@ -1,9 +1,7 @@
 ﻿namespace Library;
 
-internal class Constants
+internal class CardDetails
 {
-    public const string DEFAULT_FOLDER_NAME = "ArchidektProxyPrinter_output";
-    public const string DEFAULT_WORD_FILE_NAME = "ArchidektProxyPrinter.docx";
     public const double CARD_HEIGHT = 88.0;
     public const double CARD_WIDTH = 63.0;
     public const int DPI = 96;

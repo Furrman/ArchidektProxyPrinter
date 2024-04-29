@@ -72,7 +72,7 @@ public class WordGeneratorService(ILogger<WordGeneratorService> logger, Scryfall
             for (int i = 0; i < quantity; i++)
             {
                 using MemoryStream stream = new(imageContent);
-                paragraph.AddImage(stream, $"{imageName}{i}", width: Constants.CARD_WIDTH_PIXELS, height: Constants.CARD_HEIGHT_PIXELS);
+                paragraph.AddImage(stream, $"{imageName}{i}", width: CardDetails.CARD_WIDTH_PIXELS, height: CardDetails.CARD_HEIGHT_PIXELS);
             }
         }
         catch (Exception ex)
