@@ -10,6 +10,7 @@ public class CardSearchDTO
 public class CardDataDTO
 {
     public string? Name { get; set; }
+    public string? Lang { get; set; }
     public string? Set { get; set; }
     [JsonPropertyName("tcgplayer_etched_id")]
     public int? TcgplayerEtchedId { get; set; }

@@ -100,7 +100,7 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
 
         deck = new DeckDetailsDTO { Name = deckDto.Name!, Cards = ParseCardsToDeck(deckDto.Cards!) };
 
-        await UpdateCardImageLinks(deck.Cards);
+        await UpdateCardImageLinks(deck.Cards, languageCode);
 
         return deck;
     }
@@ -134,7 +134,7 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
             int step = UpdateStep(0, count);
             foreach (var card in cards)
             {
-                var images = await GetCardImageUrls(card);
+                var images = await GetCardImageUrls(card, languageCode);
                 if (images != null)
                 {
                     card.CardSides = images;
@@ -175,9 +175,12 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
         return deckCards;
     }
 
-    private async Task<HashSet<CardSideDTO>?> GetCardImageUrls(CardEntryDTO card)
+    private async Task<HashSet<CardSideDTO>?> GetCardImageUrls(CardEntryDTO card, string? languageCode = null)
     {
-        var cardSearch = await _scryfallApiClient.FindCard(card);
+        // Check if we have enough details about specific card for a Find instead of Search
+        var cardSearch = card.ExpansionCode != null && card.CollectorNumber != null
+            ? new() { Data = [await _scryfallApiClient.FindCard(card.Name, card.ExpansionCode, card.CollectorNumber, languageCode)] }
+            : await _scryfallApiClient.SearchCard(card.Name, card.ExpansionCode is not null || card.Etched || card.Art, languageCode != null);
 
         HashSet<CardSideDTO> cardSides = [];
 
@@ -185,7 +188,8 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
         var searchedCard = cardSearch?.Data?.FirstOrDefault(c => 
             c != null && c.Name != null && c.Name.Equals(card.Name, StringComparison.OrdinalIgnoreCase) // Find by name
             && ((!card.Etched) || (card.Etched && c.TcgplayerEtchedId is not null)) // Find etched frame if required
-            && card.ExpansionCode is not null && string.Equals(card.ExpansionCode, c.Set) // Find by expansion if required
+            && ((card.ExpansionCode == null) || string.Equals(card.ExpansionCode, c.Set)) // Find by expansion if required
+            && ((languageCode == null) || c.Lang!.Equals(languageCode, StringComparison.OrdinalIgnoreCase)) // Find by expansion if required
             );
         if (searchedCard is null)
         {

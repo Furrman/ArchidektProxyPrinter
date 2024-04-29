@@ -43,7 +43,7 @@ internal class Program
             }
             else if (deckUrl is not null)
             {
-                var magicCardService = serviceProvider.GetService<MagicCardService>()!;
+                var magicCardService = serviceProvider.GetService<IMagicCardService>()!;
                 if (!magicCardService.TryExtractDeckIdFromUrl(deckUrl, out var urlDeckId) || urlDeckId <= 0)
                 {
                     ConsoleUtility.WriteErrorMessage("You have to specify correct URL to your deck hosted by Archidekt.");
