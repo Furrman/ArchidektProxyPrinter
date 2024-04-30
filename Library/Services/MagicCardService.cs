@@ -5,6 +5,7 @@ using Library.Models.DTO;
 using Library.Models.DTO.Archidekt;
 using Library.Models.Events;
 using Library.Models.DTO.Scryfall;
+using Library.Constants;
 
 namespace Library.Services;
 
@@ -136,9 +137,21 @@ public class MagicCardService(ILogger<MagicCardService> logger, IArchidektApiCli
             return null;
         }
 
+        var allParts = searchedCard!.AllParts?.Where(p => p.Component == ScryfallParts.TOKEN);
+        if (allParts is not null)
+        {
+            // Console.WriteLine("");
+            // Console.WriteLine($"{searchedCard.Name}:");
+            foreach (var part in allParts)
+            {
+                // Console.WriteLine($"{part.Name} - {part.Uri}");
+            }
+        }
+
         HashSet<CardSideDTO> cardSides = [];
 
         // The order matters!!!
+        // TODO Refactor this to not be so dependent on the order
 
         HandleDualSideCards(searchedCard, cardSides);
 
@@ -147,6 +160,19 @@ public class MagicCardService(ILogger<MagicCardService> logger, IArchidektApiCli
         HandleSingleSideCards(card, searchedCard, cardSides);
 
         return cardSides;
+    }
+    
+    private void HandleArtCards(CardEntryDTO card, HashSet<CardSideDTO> cardSides)
+    {
+        var nameSplit = card.Name.Split(" // ");
+        if ((card.Art ||
+            (nameSplit.Length > 1 && nameSplit[0] == nameSplit[1]))
+            && cardSides.Count > 0)
+        {
+            var first = cardSides.First();
+            cardSides.Clear();
+            cardSides.Add(first);
+        }
     }
 
     private void HandleDualSideCards(CardDataDTO searchedCard, HashSet<CardSideDTO> cardSides)
@@ -203,19 +229,6 @@ public class MagicCardService(ILogger<MagicCardService> logger, IArchidektApiCli
         }
 
         return deckCards;
-    }
-    
-    private void HandleArtCards(CardEntryDTO card, HashSet<CardSideDTO> cardSides)
-    {
-        var nameSplit = card.Name.Split(" // ");
-        if ((card.Art ||
-            (nameSplit.Count() > 1 && nameSplit[0] == nameSplit[1]))
-            && cardSides.Count > 0)
-        {
-            var first = cardSides.First();
-            cardSides.Clear();
-            cardSides.Add(first);
-        }
     }
 
     private async Task<CardDataDTO?> SearchCard(CardEntryDTO card, string? languageCode = null)
