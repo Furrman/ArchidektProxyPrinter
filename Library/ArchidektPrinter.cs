@@ -54,15 +54,15 @@ public class ArchidektPrinter : IArchidektPrinter
     public event EventHandler<UpdateProgressEventArgs>? ProgressUpdate;
 
     private readonly IMagicCardService _magicCardService;
-    private readonly WordGeneratorService _wordGeneratorService;
+    private readonly IWordGeneratorService _wordGeneratorService;
     private readonly IFileManager _fileManager;
-    private readonly CardListFileParser _fileParser;
+    private readonly ICardListFileParser _fileParser;
 
     public ArchidektPrinter(
         IMagicCardService magicCardService,
-        WordGeneratorService wordGeneratorService,
+        IWordGeneratorService wordGeneratorService,
         IFileManager fileManager,
-        CardListFileParser fileParser
+        ICardListFileParser fileParser
         )
     {
         _magicCardService = magicCardService;

@@ -5,7 +5,6 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-[assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Avoid using static methods", Scope = "member", Target = "~M:Library.Services.MagicCardService.TryExtractDeckIdFromUrl(System.String,System.Int32@)~System.Boolean")]
 [assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Avoid using static methods", Scope = "member", Target = "~M:Library.IO.FileManager.CreateOutputFolder(System.String)~System.String")]
 [assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Avoid using static methods", Scope = "member", Target = "~M:Library.IO.FileManager.DirectoryExists(System.String)~System.Boolean")]
 [assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Avoid using static methods", Scope = "member", Target = "~M:Library.IO.FileManager.GetFilename(System.String)~System.String")]

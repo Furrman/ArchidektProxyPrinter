@@ -53,14 +53,10 @@ public interface IFileManager
     string ReturnCorrectWordFilePath(string? path, string? deckName = null);
 }
 
-public class FileManager : IFileManager
+public class FileManager(ILogger<FileManager> logger) 
+    : IFileManager
 {
-    private readonly ILogger<FileManager> _logger;
-
-    public FileManager(ILogger<FileManager> logger)
-    {
-        _logger = logger;
-    }
+    private readonly ILogger<FileManager> _logger = logger;
 
     public async Task CreateImageFile(byte[] content, string folderPath, string fileName)
     {

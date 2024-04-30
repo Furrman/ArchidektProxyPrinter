@@ -45,13 +45,14 @@ public interface IMagicCardService
     Task UpdateCardImageLinks(List<CardEntryDTO> cards, string? languageCode = null);
 }
 
-public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClient archidektApiClient, ScryfallApiClient scryfallApiClient) : IMagicCardService
+public class MagicCardService(ILogger<MagicCardService> logger, IArchidektApiClient archidektApiClient, IScryfallApiClient scryfallApiClient) 
+    : IMagicCardService
 {
     public event EventHandler<GetDeckDetailsProgressEventArgs>? GetDeckDetailsProgress;
 
     private readonly ILogger<MagicCardService> _logger = logger;
-    private readonly ArchidektApiClient _archidektApiClient = archidektApiClient;
-    private readonly ScryfallApiClient _scryfallApiClient = scryfallApiClient;
+    private readonly IArchidektApiClient _archidektApiClient = archidektApiClient;
+    private readonly IScryfallApiClient _scryfallApiClient = scryfallApiClient;
 
 
     public async Task DownloadCardSideImage(string imageUrl, string folderPath, string filename, int quantity)
@@ -137,16 +138,18 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
 
         HashSet<CardSideDTO> cardSides = [];
 
-        HandleDualSideCard(searchedCard, cardSides);
+        // The order matters!!!
 
-        RemoveBackSideForArtCard(card, cardSides);
+        HandleDualSideCards(searchedCard, cardSides);
 
-        HandleSingleSideCard(card, searchedCard, cardSides);
+        HandleArtCards(card, cardSides);
+
+        HandleSingleSideCards(card, searchedCard, cardSides);
 
         return cardSides;
     }
 
-    private void HandleDualSideCard(CardDataDTO searchedCard, HashSet<CardSideDTO> cardSides)
+    private void HandleDualSideCards(CardDataDTO searchedCard, HashSet<CardSideDTO> cardSides)
     {
         if (searchedCard.CardFaces is not null)
         {
@@ -162,7 +165,7 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
         }
     }
 
-    private void HandleSingleSideCard(CardEntryDTO card, CardDataDTO searchedCard, HashSet<CardSideDTO> cardSides)
+    private void HandleSingleSideCards(CardEntryDTO card, CardDataDTO searchedCard, HashSet<CardSideDTO> cardSides)
     {
         if (cardSides.Count == 0 || cardSides.Any(i => string.IsNullOrEmpty(i.Name) || string.IsNullOrEmpty(i.ImageUrl)))
         {
@@ -202,7 +205,7 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
         return deckCards;
     }
     
-    private void RemoveBackSideForArtCard(CardEntryDTO card, HashSet<CardSideDTO> cardSides)
+    private void HandleArtCards(CardEntryDTO card, HashSet<CardSideDTO> cardSides)
     {
         var nameSplit = card.Name.Split(" // ");
         if ((card.Art ||
@@ -219,7 +222,7 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
     {
         // Check if we have enough details about specific card for a Find instead of Search
         var cardSearch = card.ExpansionCode != null && card.CollectorNumber != null
-            ? new() { Data = [await _scryfallApiClient.FindCard(card.Name, card.ExpansionCode, card.CollectorNumber, languageCode)] }
+            ? new([await _scryfallApiClient.FindCard(card.Name, card.ExpansionCode, card.CollectorNumber, languageCode)])
             : await _scryfallApiClient.SearchCard(card.Name, card.ExpansionCode is not null || card.Etched || card.Art, languageCode != null);
 
         // Look for searched card in the search result

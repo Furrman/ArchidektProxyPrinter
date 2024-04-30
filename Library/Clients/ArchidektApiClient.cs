@@ -5,7 +5,21 @@ using Library.Models.DTO.Archidekt;
 
 namespace Library.Clients;
 
-public class ArchidektApiClient
+/// <summary>
+/// Represents an interface for interacting with the Archidekt API.
+/// </summary>
+public interface IArchidektApiClient
+{
+    /// <summary>
+    /// Retrieves a deck from the Archidekt API based on the specified deck ID.
+    /// </summary>
+    /// <param name="deckId">The ID of the deck to retrieve.</param>
+    /// <returns>A <see cref="Task{TResult}"/> representing the asynchronous operation, containing the retrieved <see cref="DeckDTO"/> if successful, or <c>null</c> if the deck was not found.</returns>
+    Task<DeckDTO?> GetDeck(int deckId);
+}
+
+
+public class ArchidektApiClient : IArchidektApiClient
 {
     private readonly string _baseUrl = "https://archidekt.com/";
     private readonly HttpClient _httpClient;

@@ -3,11 +3,42 @@ using System.Net;
 using System.Net.Http.Json;
 
 using Library.Models.DTO.Scryfall;
-using Library.Models.DTO;
 
 namespace Library.Clients;
 
-public class ScryfallApiClient
+/// <summary>
+/// Represents an interface for interacting with the Scryfall API.
+/// </summary>
+public interface IScryfallApiClient
+{
+    /// <summary>
+    /// Retrieves the image data for a given image URL.
+    /// </summary>
+    /// <param name="imageUrl">The URL of the image to retrieve.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the image data as a byte array, or null if the image could not be retrieved.</returns>
+    Task<byte[]?> GetImage(string imageUrl);
+
+    /// <summary>
+    /// Finds a card by its name, expansion code, collector number, and optional language code.
+    /// </summary>
+    /// <param name="cardName">The name of the card to find.</param>
+    /// <param name="expansionCode">The code of the expansion the card belongs to.</param>
+    /// <param name="collectorNumber">The collector number of the card within the expansion.</param>
+    /// <param name="languageCode">The optional language code of the card.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the card data as a CardDataDTO object, or null if the card could not be found.</returns>
+    Task<CardDataDTO?> FindCard(string cardName, string expansionCode, string collectorNumber, string? languageCode = null);
+
+    /// <summary>
+    /// Searches for cards by their name, with options to include extras and multilingual versions.
+    /// </summary>
+    /// <param name="cardName">The name of the card to search for.</param>
+    /// <param name="includeExtras">A flag indicating whether to include extras (e.g., tokens, promos) in the search results.</param>
+    /// <param name="includeMultilingual">A flag indicating whether to include multilingual versions of the card in the search results.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the search results as a CardSearchDTO object, or null if no cards match the search criteria.</returns>
+    Task<CardSearchDTO?> SearchCard(string cardName, bool includeExtras, bool includeMultilingual);
+}
+
+public class ScryfallApiClient : IScryfallApiClient
 {
     private readonly string _baseUrl = "https://api.scryfall.com";
     private readonly HttpClient _httpClient;
