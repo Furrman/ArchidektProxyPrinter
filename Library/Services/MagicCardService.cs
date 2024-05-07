@@ -35,7 +35,7 @@ public interface IMagicCardService
     /// <param name="deckId">The ID of the deck.</param>
     /// <param name="languageCode">The language code for localization (optional).</param>
     /// <returns>A task representing the asynchronous operation. The task result contains the deck details DTO, or null if not found.</returns>
-    Task<DeckDetailsDTO?> GetDeckWithCardPrintDetails(int deckId, string? languageCode = null);
+    Task<DeckDetailsDTO?> GetDeckWithCardPrintDetails(int deckId, string? languageCode = null, int tokenCopies = 0, bool printAllTokens = false);
 
     /// <summary>
     /// Updates the card image links.
@@ -43,7 +43,7 @@ public interface IMagicCardService
     /// <param name="cards">The list of card entries to update.</param>
     /// <param name="languageCode">The language code for localization (optional).</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task UpdateCardImageLinks(List<CardEntryDTO> cards, string? languageCode = null);
+    Task UpdateCardImageLinks(List<CardEntryDTO> cards, string? languageCode = null, int tokenCopies = 0, bool printAllTokens = false);
 }
 
 public class MagicCardService(ILogger<MagicCardService> logger, IArchidektApiClient archidektApiClient, IScryfallApiClient scryfallApiClient) 
@@ -76,7 +76,7 @@ public class MagicCardService(ILogger<MagicCardService> logger, IArchidektApiCli
         }
     }
 
-    public async Task<DeckDetailsDTO?> GetDeckWithCardPrintDetails(int deckId, string? languageCode = null)
+    public async Task<DeckDetailsDTO?> GetDeckWithCardPrintDetails(int deckId, string? languageCode = null, int tokenCopies = 0, bool printAllTokens = false)
     {
         DeckDetailsDTO? deck = null;
 
@@ -94,12 +94,12 @@ public class MagicCardService(ILogger<MagicCardService> logger, IArchidektApiCli
 
         deck = new DeckDetailsDTO { Name = deckDto.Name!, Cards = ParseCardsToDeck(deckDto.Cards!) };
 
-        await UpdateCardImageLinks(deck.Cards, languageCode);
+        await UpdateCardImageLinks(deck.Cards, languageCode, tokenCopies, printAllTokens);
 
         return deck;
     }
 
-    public async Task UpdateCardImageLinks(List<CardEntryDTO> cards, string? languageCode = null)
+    public async Task UpdateCardImageLinks(List<CardEntryDTO> cards, string? languageCode = null, int tokenCopies = 0, bool printAllTokens = false)
     {
         try
         {
@@ -122,7 +122,7 @@ public class MagicCardService(ILogger<MagicCardService> logger, IArchidektApiCli
     }
 
 
-    private async Task<HashSet<CardSideDTO>?> GetCardImageUrls(CardEntryDTO card, string? languageCode = null)
+    private async Task<HashSet<CardSideDTO>?> GetCardImageUrls(CardEntryDTO card, string? languageCode = null, int tokenCopies = 0, bool printAllTokens = false)
     {
         var searchedCard = await SearchCard(card, languageCode);
         // If card was not found, try to search it without language code
@@ -137,27 +137,18 @@ public class MagicCardService(ILogger<MagicCardService> logger, IArchidektApiCli
             return null;
         }
 
-        var allParts = searchedCard!.AllParts?.Where(p => p.Component == ScryfallParts.TOKEN);
-        if (allParts is not null)
-        {
-            // Console.WriteLine("");
-            // Console.WriteLine($"{searchedCard.Name}:");
-            foreach (var part in allParts)
-            {
-                // Console.WriteLine($"{part.Name} - {part.Uri}");
-            }
-        }
-
         HashSet<CardSideDTO> cardSides = [];
 
         // The order matters!!!
-        // TODO Refactor this to not be so dependent on the order
+        // TODO: Refactor this to not be so dependent on the order
 
         HandleDualSideCards(searchedCard, cardSides);
 
         HandleArtCards(card, cardSides);
 
         HandleSingleSideCards(card, searchedCard, cardSides);
+
+        HandleRelatedTokens(card, searchedCard, tokenCopies);
 
         return cardSides;
     }
@@ -202,6 +193,24 @@ public class MagicCardService(ILogger<MagicCardService> logger, IArchidektApiCli
                 return;
             }
             cardSides.Add(new CardSideDTO { Name = card.Name, ImageUrl = searchedCard.ImageUris.Large });
+        }
+    }
+
+    private void HandleRelatedTokens(CardEntryDTO card, CardDataDTO searchedCard, int tokenCopies)
+    {
+        if (tokenCopies == 0) return;
+
+        var allParts = searchedCard!.AllParts?.Where(p => p.Component == ScryfallParts.TOKEN);
+        if (allParts is not null)
+        {
+            foreach (var part in allParts)
+            {
+                card.Tokens.Add(new CardTokenDTO
+                {
+                    Name = part.Name,
+                    Uri = part.Uri
+                });
+            }
         }
     }
 

@@ -25,7 +25,7 @@ public interface IArchidektPrinter
     /// <param name="languageCode">The language code to be used for generating the Word document. If null, the default language code will be used.</param>
     /// <param name="saveImages">Specifies whether to save card images in the document. Default is false.</param>
     /// <returns>A task representing the asynchronous generation process.</returns>
-    Task GenerateWord(int? deckId = null, string? inputFilePath = null, string? outputPath = null, string? outputFileName = null, string? languageCode = null, bool saveImages = false);
+    Task GenerateWord(int? deckId = null, string? inputFilePath = null, string? outputPath = null, string? outputFileName = null, string? languageCode = null, int tokenCopies = 0, bool printAllTokens = false, bool saveImages = false);
 
     /// <summary>
     /// Generates a Word document from the specified deck ID.
@@ -36,7 +36,7 @@ public interface IArchidektPrinter
     /// <param name="languageCode">The language code to be used for generating the Word document. If null, the default language code will be used.</param>
     /// <param name="saveImages">Specifies whether to save card images in the document. Default is false.</param>
     /// <returns>A task representing the asynchronous generation process.</returns>
-    Task GenerateWord(int deckId, string? outputPath = null, string? outputFileName = null, string? languageCode = null, bool saveImages = false);
+    Task GenerateWord(int deckId, string? outputPath = null, string? outputFileName = null, string? languageCode = null, int tokenCopies = 0, bool printAllTokens = false, bool saveImages = false);
 
     /// <summary>
     /// Generates a Word document from the specified deck list file.
@@ -46,7 +46,7 @@ public interface IArchidektPrinter
     /// <param name="outputFileName">The name of the generated Word document. If null, a default name will be used.</param>
     /// <param name="saveImages">Specifies whether to save card images in the document. Default is false.</param>
     /// <returns>A task representing the asynchronous generation process.</returns>
-    Task GenerateWord(string deckListFilePath, string? outputPath = null, string? outputFileName = null, string? languageCode = null, bool saveImages = false);
+    Task GenerateWord(string deckListFilePath, string? outputPath = null, string? outputFileName = null, string? languageCode = null, int tokenCopies = 0, bool printAllTokens = false, bool saveImages = false);
 }
 
 public class ArchidektPrinter : IArchidektPrinter
@@ -80,10 +80,12 @@ public class ArchidektPrinter : IArchidektPrinter
         string? outputPath = null, 
         string? outputFileName = null,
         string? languageCode = null,
+        int tokenCopies = 0, 
+        bool printAllTokens = false,
         bool saveImages = false)
     {
-        if (deckId != null) await GenerateWord(deckId!.Value, outputPath, outputFileName, languageCode, saveImages);
-        else if (inputFilePath != null) await GenerateWord(inputFilePath, outputPath, outputFileName, languageCode, saveImages);
+        if (deckId != null) await GenerateWord(deckId!.Value, outputPath, outputFileName, languageCode, tokenCopies, printAllTokens, saveImages);
+        else if (inputFilePath != null) await GenerateWord(inputFilePath, outputPath, outputFileName, languageCode, tokenCopies, printAllTokens, saveImages);
         else throw new ArgumentException("DeckId has to be bigger than 0 or WordFilePath has to be corrected");
     }
 
@@ -92,9 +94,11 @@ public class ArchidektPrinter : IArchidektPrinter
         string? outputPath = null, 
         string? outputFileName = null, 
         string? languageCode = null,
+        int tokenCopies = 0, 
+        bool printAllTokens = false,
         bool saveImages = false)
     {
-        var deckDetails = await _magicCardService.GetDeckWithCardPrintDetails(deckId, languageCode);
+        var deckDetails = await _magicCardService.GetDeckWithCardPrintDetails(deckId, languageCode, tokenCopies, printAllTokens);
         if (deckDetails is null)
         {
             RaiseError("Getting deck details returned error");
@@ -109,17 +113,23 @@ public class ArchidektPrinter : IArchidektPrinter
         string? outputPath = null, 
         string? outputFileName = null, 
         string? languageCode = null,
+        int tokenCopies = 0, 
+        bool printAllTokens = false,
         bool saveImages = false)
     {
         var deck = _fileParser.GetDeckFromFile(deckListFilePath);
-        await _magicCardService.UpdateCardImageLinks(deck.Cards, languageCode);
+        await _magicCardService.UpdateCardImageLinks(deck.Cards, languageCode, tokenCopies, printAllTokens);
 
         outputFileName ??= _fileManager.GetFilename(deckListFilePath);
         await GenerateWord(deck, outputPath, outputFileName, saveImages);
     }
 
 
-    private async Task GenerateWord(DeckDetailsDTO deck, string? outputPath = null, string? outputFileName = null, bool saveImages = false)
+    private async Task GenerateWord(
+        DeckDetailsDTO deck, 
+        string? outputPath = null, 
+        string? outputFileName = null,
+        bool saveImages = false)
     {
         if (deck.Cards.Count == 0)
         {

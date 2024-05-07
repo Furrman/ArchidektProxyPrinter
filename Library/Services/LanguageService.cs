@@ -12,8 +12,8 @@ public interface ILanguageService
     /// Checks if a language code is valid.
     /// </summary>
     /// <param name="languageCode">The language code to validate.</param>
-    /// <returns><c>true</c> if the language code is valid; otherwise, <c>false</c>.</returns>
-    bool IsValidLanguage(string languageCode);
+    /// <returns><c>true</c> if the language code is valid or null; otherwise, <c>false</c>.</returns>
+    bool IsValidLanguage(string? languageCode);
 
     /// <summary>
     /// Gets the available languages.
@@ -37,7 +37,7 @@ public class LanguageService(ILogger<LanguageService> logger) : ILanguageService
         LanguageCodes.CHINESE_TRADITIONAL_CODE_CODE
     ];
 
-    public bool IsValidLanguage(string languageCode) => _languages.Contains(languageCode);
+    public bool IsValidLanguage(string? languageCode) => languageCode is null || _languages.Contains(languageCode);
 
     public string AvailableLanguages => string.Join(", ", _languages);
 }

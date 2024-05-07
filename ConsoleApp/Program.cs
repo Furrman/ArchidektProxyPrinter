@@ -20,7 +20,9 @@ internal class Program
         CoconoaApp.Run(([CoconoaOptions(Description = "Filepath to exported deck from Archidekt")] string? deckFilePath,
             [CoconoaOptions(Description = "ID of the deck in Archidekt")] int? deckId,
             [CoconoaOptions(Description = "URL link to deck in Archidekt")]string? deckUrl,
-            [CoconoaOptions(Description = "Set language for all cards to print")] string languageCode = "en",
+            [CoconoaOptions(Description = "Set language for all cards to print")] string? languageCode = null,
+            [CoconoaOptions(Description = "Number of copy for each token")] int tokenCopies = 0,
+            [CoconoaOptions(Description = "Print all tokens or reduce different version of the same token")] bool printAllTokens = false,
             [CoconoaOptions(Description = "Directory path to output file(s)")]string? outputPath = null,
             [CoconoaOptions(Description = "Filename of the output word file")]string? outputFileName = null,
             [CoconoaOptions(Description = "Flag to store original images in the same folder as output file")] bool storeOriginalImages = false) =>
@@ -70,7 +72,14 @@ internal class Program
 
             var archidektPrinter = serviceProvider.GetService<IArchidektPrinter>()!;
             archidektPrinter.ProgressUpdate += UpdateProgressOnConsole;
-            archidektPrinter.GenerateWord(deckId, deckFilePath, outputPath, outputFileName, languageCode, storeOriginalImages).Wait();
+            archidektPrinter.GenerateWord(deckId, 
+                deckFilePath, 
+                outputPath, 
+                outputFileName, 
+                languageCode,
+                tokenCopies,
+                printAllTokens,
+                storeOriginalImages).Wait();
         });
     }
 
