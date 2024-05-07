@@ -60,7 +60,7 @@ public class WordGeneratorService(ILogger<WordGeneratorService> logger, IScryfal
             {
                 foreach (var cardSide in card.CardSides)
                 {
-                    var imageContent = await _scryfallClient.GetImage(cardSide.ImageUrl);
+                    var imageContent = await _scryfallClient.DownloadImage(cardSide.ImageUrl);
                     if (imageContent == null)
                     {
                         step = UpdateStep(step, count);

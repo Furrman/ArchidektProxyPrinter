@@ -6,6 +6,7 @@ using Library.Models.DTO.Archidekt;
 using Library.Models.Events;
 using Library.Models.DTO.Scryfall;
 using Library.Constants;
+using Library.Helpers;
 
 namespace Library.Services;
 
@@ -60,7 +61,7 @@ public class MagicCardService(ILogger<MagicCardService> logger, IArchidektApiCli
     {
         try
         {
-            var imageBytes = await _scryfallApiClient.GetImage(imageUrl);
+            var imageBytes = await _scryfallApiClient.DownloadImage(imageUrl);
             if (imageBytes is null)
             {
                 _logger.LogWarning("Image not received from internet");
@@ -107,13 +108,15 @@ public class MagicCardService(ILogger<MagicCardService> logger, IArchidektApiCli
             int step = UpdateStep(0, count);
             foreach (var card in cards)
             {
-                var images = await GetCardImageUrls(card, languageCode);
+                var images = await GetCardImageUrls(card, languageCode: languageCode, tokenCopies: tokenCopies);
                 if (images != null)
                 {
                     card.CardSides = images;
                 }
                 step = UpdateStep(step, count);
             }
+
+            await UpdateTokens(cards, tokenCopies, printAllTokens);
         }
         catch (Exception ex)
         {
@@ -122,7 +125,7 @@ public class MagicCardService(ILogger<MagicCardService> logger, IArchidektApiCli
     }
 
 
-    private async Task<HashSet<CardSideDTO>?> GetCardImageUrls(CardEntryDTO card, string? languageCode = null, int tokenCopies = 0, bool printAllTokens = false)
+    private async Task<HashSet<CardSideDTO>?> GetCardImageUrls(CardEntryDTO card, string? languageCode = null, int tokenCopies = 0)
     {
         var searchedCard = await SearchCard(card, languageCode);
         // If card was not found, try to search it without language code
@@ -265,5 +268,39 @@ public class MagicCardService(ILogger<MagicCardService> logger, IArchidektApiCli
             Percent = percent
         });
         return ++step;
+    }
+
+    private async Task UpdateTokens(List<CardEntryDTO> cards, int tokenCopies, bool printAllTokens)
+    {
+        // Casting to list because of cards being modified
+        var tokens = cards.SelectMany(c => c.Tokens)
+            .ToList();
+        if (!printAllTokens)
+        {
+            tokens = tokens.GroupBy(t => t.Name)
+                .Select(g => g.First())
+                .ToList();
+        }
+
+        foreach (var token in tokens)
+        {
+            var tokenId = UrlHelper.GetGuidFromLastPartOfUrl(token.Uri!);
+            if (tokenId is null)
+            {
+                _logger.LogError("Token {Name} does not have a valid Scryfall URI", token.Name);
+                continue;
+            }
+            var cardToken = await _scryfallApiClient.GetCard(tokenId.Value);
+            if (cardToken is not null)
+            {
+                cards.Add(new CardEntryDTO
+                {
+                    Name = token.Name,
+                    Quantity = tokenCopies,
+                    ExpansionCode = cardToken.Set,
+                    CardSides = [new CardSideDTO { Name = cardToken.Name!, ImageUrl = cardToken.ImageUris?.Large ?? string.Empty }]
+                });
+            }
+        }
     }
 }

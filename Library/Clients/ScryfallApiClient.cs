@@ -16,7 +16,14 @@ public interface IScryfallApiClient
     /// </summary>
     /// <param name="imageUrl">The URL of the image to retrieve.</param>
     /// <returns>A task that represents the asynchronous operation. The task result contains the image data as a byte array, or null if the image could not be retrieved.</returns>
-    Task<byte[]?> GetImage(string imageUrl);
+    Task<byte[]?> DownloadImage(string imageUrl);
+
+    /// <summary>
+    /// Retrieves the card data for a specific card ID.
+    /// </summary>
+    /// <param name="cardId">The unique identifier of the card.</param>
+    /// <returns>The card data for the specified card ID, or null if the card is not found.</returns>
+    Task<CardDataDTO?> GetCard(Guid cardId);
 
     /// <summary>
     /// Finds a card by its name, expansion code, collector number, and optional language code.
@@ -56,7 +63,7 @@ public class ScryfallApiClient : IScryfallApiClient
     }
 
 
-    public async Task<byte[]?> GetImage(string imageUrl)
+    public async Task<byte[]?> DownloadImage(string imageUrl)
     {
         try
         {
@@ -67,6 +74,36 @@ public class ScryfallApiClient : IScryfallApiClient
             _logger.LogError(ex, "Error in downloading image from {imageUrl}", imageUrl);
             return null;
         }
+    }
+
+    public async Task<CardDataDTO?> GetCard(Guid cardId)
+    {
+        CardDataDTO? cardData = null;
+        var requestUrl = $"/cards/{cardId}";
+
+        try
+        {
+            var response = await _httpClient.GetAsync(requestUrl);
+
+            if (response.IsSuccessStatusCode)
+            {
+                cardData = await response.Content.ReadFromJsonAsync<CardDataDTO>();
+            }
+            else if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                _logger.LogWarning("Card with ID '{cardId}' not found", cardId);
+            }
+            else
+            {
+                _logger.LogError("Request failed for card with ID '{cardId}' - ({statusCode}) {reasonPhrase}", cardId, response.StatusCode, response.ReasonPhrase);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in retrieving card with ID '{cardId}'", cardId);
+        }
+
+        return cardData;
     }
 
     public async Task<CardDataDTO?> FindCard(string cardName, string expansionCode, string collectorNumber, string? languageCode = null)
