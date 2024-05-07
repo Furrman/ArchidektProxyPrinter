@@ -14,7 +14,7 @@ public class CardListFileParserTest
         var loggerMock = new Mock<ILogger<CardListFileParser>>();
         var fileManagerMock = new Mock<IFileManager>();
         fileManagerMock.Setup(fm => fm.GetFilename(filePath)).Returns("file");
-        fileManagerMock.Setup(fm => fm.GetLinesFromTextFile(filePath)).Returns(new List<string>());
+        fileManagerMock.Setup(fm => fm.GetLinesFromTextFile(filePath)).Returns([]);
         var parser = new CardListFileParser(loggerMock.Object, fileManagerMock.Object);
 
         // Act
@@ -34,10 +34,10 @@ public class CardListFileParserTest
         var loggerMock = new Mock<ILogger<CardListFileParser>>();
         var fileManagerMock = new Mock<IFileManager>();
         fileManagerMock.Setup(fm => fm.GetFilename(filePath)).Returns("file");
-        fileManagerMock.Setup(fm => fm.GetLinesFromTextFile(filePath)).Returns(new List<string>
-        {
+        fileManagerMock.Setup(fm => fm.GetLinesFromTextFile(filePath)).Returns(
+        [
             "Card A"
-        });
+        ]);
         var parser = new CardListFileParser(loggerMock.Object, fileManagerMock.Object);
 
         // Act
@@ -60,10 +60,10 @@ public class CardListFileParserTest
         var loggerMock = new Mock<ILogger<CardListFileParser>>();
         var fileManagerMock = new Mock<IFileManager>();
         fileManagerMock.Setup(fm => fm.GetFilename(filePath)).Returns("file");
-        fileManagerMock.Setup(fm => fm.GetLinesFromTextFile(filePath)).Returns(new List<string>
-        {
+        fileManagerMock.Setup(fm => fm.GetLinesFromTextFile(filePath)).Returns(
+        [
             "2x Card B"
-        });
+        ]);
         var parser = new CardListFileParser(loggerMock.Object, fileManagerMock.Object);
 
         // Act
@@ -86,10 +86,10 @@ public class CardListFileParserTest
         var loggerMock = new Mock<ILogger<CardListFileParser>>();
         var fileManagerMock = new Mock<IFileManager>();
         fileManagerMock.Setup(fm => fm.GetFilename(filePath)).Returns("file");
-        fileManagerMock.Setup(fm => fm.GetLinesFromTextFile(filePath)).Returns(new List<string>
-        {
+        fileManagerMock.Setup(fm => fm.GetLinesFromTextFile(filePath)).Returns(
+        [
             "1x Card C (EXP)"
-        });
+        ]);
         var parser = new CardListFileParser(loggerMock.Object, fileManagerMock.Object);
 
         // Act
@@ -112,10 +112,10 @@ public class CardListFileParserTest
         var loggerMock = new Mock<ILogger<CardListFileParser>>();
         var fileManagerMock = new Mock<IFileManager>();
         fileManagerMock.Setup(fm => fm.GetFilename(filePath)).Returns("file");
-        fileManagerMock.Setup(fm => fm.GetLinesFromTextFile(filePath)).Returns(new List<string>
-        {
+        fileManagerMock.Setup(fm => fm.GetLinesFromTextFile(filePath)).Returns(
+        [
             "1x Card D *F*"
-        });
+        ]);
         var parser = new CardListFileParser(loggerMock.Object, fileManagerMock.Object);
 
         // Act
@@ -138,10 +138,10 @@ public class CardListFileParserTest
         var loggerMock = new Mock<ILogger<CardListFileParser>>();
         var fileManagerMock = new Mock<IFileManager>();
         fileManagerMock.Setup(fm => fm.GetFilename(filePath)).Returns("file");
-        fileManagerMock.Setup(fm => fm.GetLinesFromTextFile(filePath)).Returns(new List<string>
-        {
+        fileManagerMock.Setup(fm => fm.GetLinesFromTextFile(filePath)).Returns(
+        [
             "1x Card E *E*"
-        });
+        ]);
         var parser = new CardListFileParser(loggerMock.Object, fileManagerMock.Object);
 
         // Act
@@ -164,13 +164,13 @@ public class CardListFileParserTest
         var loggerMock = new Mock<ILogger<CardListFileParser>>();
         var fileManagerMock = new Mock<IFileManager>();
         fileManagerMock.Setup(fm => fm.GetFilename(filePath)).Returns("file");
-        fileManagerMock.Setup(fm => fm.GetLinesFromTextFile(filePath)).Returns(new List<string>
-        {
+        fileManagerMock.Setup(fm => fm.GetLinesFromTextFile(filePath)).Returns(
+        [
             "2x Card F",
             "1x Card G (EXP)",
             "3 Card H *F*",
             "1 Card I *E*"
-        });
+        ]);
         var parser = new CardListFileParser(loggerMock.Object, fileManagerMock.Object);
 
         // Act

@@ -5,6 +5,8 @@ using Library.Models.DTO;
 using Library.Models.DTO.Archidekt;
 using Library.Models.Events;
 using Library.Models.DTO.Scryfall;
+using Library.Constants;
+using Library.Helpers;
 
 namespace Library.Services;
 
@@ -34,7 +36,7 @@ public interface IMagicCardService
     /// <param name="deckId">The ID of the deck.</param>
     /// <param name="languageCode">The language code for localization (optional).</param>
     /// <returns>A task representing the asynchronous operation. The task result contains the deck details DTO, or null if not found.</returns>
-    Task<DeckDetailsDTO?> GetDeckWithCardPrintDetails(int deckId, string? languageCode = null);
+    Task<DeckDetailsDTO?> GetDeckWithCardPrintDetails(int deckId, string? languageCode = null, int tokenCopies = 0, bool printAllTokens = false);
 
     /// <summary>
     /// Updates the card image links.
@@ -42,23 +44,24 @@ public interface IMagicCardService
     /// <param name="cards">The list of card entries to update.</param>
     /// <param name="languageCode">The language code for localization (optional).</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task UpdateCardImageLinks(List<CardEntryDTO> cards, string? languageCode = null);
+    Task UpdateCardImageLinks(List<CardEntryDTO> cards, string? languageCode = null, int tokenCopies = 0, bool printAllTokens = false);
 }
 
-public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClient archidektApiClient, ScryfallApiClient scryfallApiClient) : IMagicCardService
+public class MagicCardService(ILogger<MagicCardService> logger, IArchidektApiClient archidektApiClient, IScryfallApiClient scryfallApiClient) 
+    : IMagicCardService
 {
     public event EventHandler<GetDeckDetailsProgressEventArgs>? GetDeckDetailsProgress;
 
     private readonly ILogger<MagicCardService> _logger = logger;
-    private readonly ArchidektApiClient _archidektApiClient = archidektApiClient;
-    private readonly ScryfallApiClient _scryfallApiClient = scryfallApiClient;
+    private readonly IArchidektApiClient _archidektApiClient = archidektApiClient;
+    private readonly IScryfallApiClient _scryfallApiClient = scryfallApiClient;
 
 
     public async Task DownloadCardSideImage(string imageUrl, string folderPath, string filename, int quantity)
     {
         try
         {
-            var imageBytes = await _scryfallApiClient.GetImage(imageUrl);
+            var imageBytes = await _scryfallApiClient.DownloadImage(imageUrl);
             if (imageBytes is null)
             {
                 _logger.LogWarning("Image not received from internet");
@@ -74,7 +77,7 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
         }
     }
 
-    public async Task<DeckDetailsDTO?> GetDeckWithCardPrintDetails(int deckId, string? languageCode = null)
+    public async Task<DeckDetailsDTO?> GetDeckWithCardPrintDetails(int deckId, string? languageCode = null, int tokenCopies = 0, bool printAllTokens = false)
     {
         DeckDetailsDTO? deck = null;
 
@@ -92,12 +95,12 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
 
         deck = new DeckDetailsDTO { Name = deckDto.Name!, Cards = ParseCardsToDeck(deckDto.Cards!) };
 
-        await UpdateCardImageLinks(deck.Cards, languageCode);
+        await UpdateCardImageLinks(deck.Cards, languageCode, tokenCopies, printAllTokens);
 
         return deck;
     }
 
-    public async Task UpdateCardImageLinks(List<CardEntryDTO> cards, string? languageCode = null)
+    public async Task UpdateCardImageLinks(List<CardEntryDTO> cards, string? languageCode = null, int tokenCopies = 0, bool printAllTokens = false)
     {
         try
         {
@@ -105,13 +108,15 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
             int step = UpdateStep(0, count);
             foreach (var card in cards)
             {
-                var images = await GetCardImageUrls(card, languageCode);
+                var images = await GetCardImageUrls(card, languageCode: languageCode, tokenCopies: tokenCopies);
                 if (images != null)
                 {
                     card.CardSides = images;
                 }
                 step = UpdateStep(step, count);
             }
+
+            await UpdateTokens(cards, tokenCopies, printAllTokens);
         }
         catch (Exception ex)
         {
@@ -120,7 +125,7 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
     }
 
 
-    private async Task<HashSet<CardSideDTO>?> GetCardImageUrls(CardEntryDTO card, string? languageCode = null)
+    private async Task<HashSet<CardSideDTO>?> GetCardImageUrls(CardEntryDTO card, string? languageCode = null, int tokenCopies = 0)
     {
         var searchedCard = await SearchCard(card, languageCode);
         // If card was not found, try to search it without language code
@@ -137,16 +142,34 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
 
         HashSet<CardSideDTO> cardSides = [];
 
-        HandleDualSideCard(searchedCard, cardSides);
+        // The order matters!!!
+        // TODO: Refactor this to not be so dependent on the order
 
-        RemoveBackSideForArtCard(card, cardSides);
+        HandleDualSideCards(searchedCard, cardSides);
 
-        HandleSingleSideCard(card, searchedCard, cardSides);
+        HandleArtCards(card, cardSides);
+
+        HandleSingleSideCards(card, searchedCard, cardSides);
+
+        HandleRelatedTokens(card, searchedCard, tokenCopies);
 
         return cardSides;
     }
+    
+    private void HandleArtCards(CardEntryDTO card, HashSet<CardSideDTO> cardSides)
+    {
+        var nameSplit = card.Name.Split(" // ");
+        if ((card.Art ||
+            (nameSplit.Length > 1 && nameSplit[0] == nameSplit[1]))
+            && cardSides.Count > 0)
+        {
+            var first = cardSides.First();
+            cardSides.Clear();
+            cardSides.Add(first);
+        }
+    }
 
-    private void HandleDualSideCard(CardDataDTO searchedCard, HashSet<CardSideDTO> cardSides)
+    private void HandleDualSideCards(CardDataDTO searchedCard, HashSet<CardSideDTO> cardSides)
     {
         if (searchedCard.CardFaces is not null)
         {
@@ -162,7 +185,7 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
         }
     }
 
-    private void HandleSingleSideCard(CardEntryDTO card, CardDataDTO searchedCard, HashSet<CardSideDTO> cardSides)
+    private void HandleSingleSideCards(CardEntryDTO card, CardDataDTO searchedCard, HashSet<CardSideDTO> cardSides)
     {
         if (cardSides.Count == 0 || cardSides.Any(i => string.IsNullOrEmpty(i.Name) || string.IsNullOrEmpty(i.ImageUrl)))
         {
@@ -173,6 +196,24 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
                 return;
             }
             cardSides.Add(new CardSideDTO { Name = card.Name, ImageUrl = searchedCard.ImageUris.Large });
+        }
+    }
+
+    private void HandleRelatedTokens(CardEntryDTO card, CardDataDTO searchedCard, int tokenCopies)
+    {
+        if (tokenCopies == 0) return;
+
+        var allParts = searchedCard!.AllParts?.Where(p => p.Component == ScryfallParts.TOKEN);
+        if (allParts is not null)
+        {
+            foreach (var part in allParts)
+            {
+                card.Tokens.Add(new CardTokenDTO
+                {
+                    Name = part.Name,
+                    Uri = part.Uri
+                });
+            }
         }
     }
 
@@ -201,25 +242,12 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
 
         return deckCards;
     }
-    
-    private void RemoveBackSideForArtCard(CardEntryDTO card, HashSet<CardSideDTO> cardSides)
-    {
-        var nameSplit = card.Name.Split(" // ");
-        if ((card.Art ||
-            (nameSplit.Count() > 1 && nameSplit[0] == nameSplit[1]))
-            && cardSides.Count > 0)
-        {
-            var first = cardSides.First();
-            cardSides.Clear();
-            cardSides.Add(first);
-        }
-    }
 
     private async Task<CardDataDTO?> SearchCard(CardEntryDTO card, string? languageCode = null)
     {
         // Check if we have enough details about specific card for a Find instead of Search
         var cardSearch = card.ExpansionCode != null && card.CollectorNumber != null
-            ? new() { Data = [await _scryfallApiClient.FindCard(card.Name, card.ExpansionCode, card.CollectorNumber, languageCode)] }
+            ? new([await _scryfallApiClient.FindCard(card.Name, card.ExpansionCode, card.CollectorNumber, languageCode)])
             : await _scryfallApiClient.SearchCard(card.Name, card.ExpansionCode is not null || card.Etched || card.Art, languageCode != null);
 
         // Look for searched card in the search result
@@ -240,5 +268,39 @@ public class MagicCardService(ILogger<MagicCardService> logger, ArchidektApiClie
             Percent = percent
         });
         return ++step;
+    }
+
+    private async Task UpdateTokens(List<CardEntryDTO> cards, int tokenCopies, bool printAllTokens)
+    {
+        // Casting to list because of cards being modified
+        var tokens = cards.SelectMany(c => c.Tokens)
+            .ToList();
+        if (!printAllTokens)
+        {
+            tokens = tokens.GroupBy(t => t.Name)
+                .Select(g => g.First())
+                .ToList();
+        }
+
+        foreach (var token in tokens)
+        {
+            var tokenId = UrlHelper.GetGuidFromLastPartOfUrl(token.Uri!);
+            if (tokenId is null)
+            {
+                _logger.LogError("Token {Name} does not have a valid Scryfall URI", token.Name);
+                continue;
+            }
+            var cardToken = await _scryfallApiClient.GetCard(tokenId.Value);
+            if (cardToken is not null)
+            {
+                cards.Add(new CardEntryDTO
+                {
+                    Name = token.Name,
+                    Quantity = tokenCopies,
+                    ExpansionCode = cardToken.Set,
+                    CardSides = [new CardSideDTO { Name = cardToken.Name!, ImageUrl = cardToken.ImageUris?.Large ?? string.Empty }]
+                });
+            }
+        }
     }
 }

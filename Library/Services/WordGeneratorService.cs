@@ -10,12 +10,34 @@ using Library.IO;
 
 namespace Library.Services;
 
-public class WordGeneratorService(ILogger<WordGeneratorService> logger, ScryfallApiClient scryfallClient, IFileManager fileManager)
+/// <summary>
+/// Represents a service for generating Word documents based on deck details.
+/// </summary>
+public interface IWordGeneratorService
+{
+    /// <summary>
+    /// Event that is raised to report the progress of the word generation.
+    /// </summary>
+    event EventHandler<GenerateWordProgressEventArgs>? GenerateWordProgress;
+
+    /// <summary>
+    /// Generates a Word document based on the provided deck details.
+    /// </summary>
+    /// <param name="deck">The deck details.</param>
+    /// <param name="outputFolder">The output folder where the Word document will be saved.</param>
+    /// <param name="wordFilePath">The file path of the Word document.</param>
+    /// <param name="saveImages">A flag indicating whether to save images in the Word document.</param>
+    /// <returns>A task representing the asynchronous generation of the Word document.</returns>
+    Task GenerateWord(DeckDetailsDTO deck, string outputFolder, string wordFilePath, bool saveImages);
+}
+
+public class WordGeneratorService(ILogger<WordGeneratorService> logger, IScryfallApiClient scryfallClient, IFileManager fileManager)
+    : IWordGeneratorService
 {
     public event EventHandler<GenerateWordProgressEventArgs>? GenerateWordProgress;
 
     private readonly ILogger<WordGeneratorService> _logger = logger;
-    private readonly ScryfallApiClient _scryfallClient = scryfallClient;
+    private readonly IScryfallApiClient _scryfallClient = scryfallClient;
     private readonly IFileManager _fileManager = fileManager;
 
 
@@ -38,7 +60,7 @@ public class WordGeneratorService(ILogger<WordGeneratorService> logger, Scryfall
             {
                 foreach (var cardSide in card.CardSides)
                 {
-                    var imageContent = await _scryfallClient.GetImage(cardSide.ImageUrl);
+                    var imageContent = await _scryfallClient.DownloadImage(cardSide.ImageUrl);
                     if (imageContent == null)
                     {
                         step = UpdateStep(step, count);

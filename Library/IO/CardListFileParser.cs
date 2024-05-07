@@ -3,7 +3,21 @@ using Microsoft.Extensions.Logging;
 
 namespace Library.IO;
 
+/// <summary>
+/// Represents a parser for card list files.
+/// </summary>
+public interface ICardListFileParser
+{
+    /// <summary>
+    /// Parses a card list file and returns the deck details.
+    /// </summary>
+    /// <param name="filePath">The path to the card list file.</param>
+    /// <returns>The deck details.</returns>
+    DeckDetailsDTO GetDeckFromFile(string filePath);
+}
+
 public class CardListFileParser(ILogger<CardListFileParser> logger, IFileManager fileManager)
+    : ICardListFileParser
 {
     private readonly ILogger<CardListFileParser> _logger = logger;
     private readonly IFileManager _fileManager = fileManager;

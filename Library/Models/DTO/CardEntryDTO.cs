@@ -19,6 +19,7 @@ public class CardEntryDTO : IEquatable<CardEntryDTO>
     public bool Etched { get; set; }
     public bool Foil { get; set; }
     public HashSet<CardSideDTO> CardSides { get; set; } = [];
+    public List<CardTokenDTO> Tokens { get; set; } = [];
 
 
     public override int GetHashCode()
