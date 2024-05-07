@@ -46,10 +46,17 @@ Call ArchidektProxyPrinter file (can have .exe extension) from command liner wit
 
 List of all parameters:
 ```
+Usage: ArchidektProxyP [--deck-file-path <String>] [--deck-id <Int32>] [--deck-url <String>] [--language-code <String>] [--token-copies <Int32>] [--print-all-tokens] [--output-path <String>] [--output-file-name <String>] [--store-original-images] [--help] [--version]
+
+ArchidektProxyPrinter
+
 Options:
   --deck-file-path <String>      Filepath to exported deck from Archidekt
   --deck-id <Int32>              ID of the deck in Archidekt
   --deck-url <String>            URL link to deck in Archidekt
+  --language-code <String>       Set language for all cards to print
+  --token-copies <Int32>         Number of copy for each token (Default: 0)
+  --print-all-tokens             Print all tokens or reduce different version of the same token
   --output-path <String>         Directory path to output file(s)
   --output-file-name <String>    Filename of the output word file
   --store-original-images        Flag to store original images in the same folder as output file
