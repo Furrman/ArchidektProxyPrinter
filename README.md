@@ -55,7 +55,7 @@ Options:
   --deck-id <Int32>              ID of the deck in Archidekt
   --deck-url <String>            URL link to deck in Archidekt
   --language-code <String>       Set language for all cards to print
-  --token-copies <Int32>         Number of copy for each token (Default: 0)
+  --token-copies <Int32>         Number of copy for each token
   --print-all-tokens             Print all tokens or reduce different version of the same token
   --output-path <String>         Directory path to output file(s)
   --output-file-name <String>    Filename of the output word file
