@@ -4,7 +4,7 @@ namespace Library.Models.DTO.Scryfall;
 
 public record CardSearchDTO(ICollection<CardDataDTO?>? Data);
 
-public class CardDataDTO
+public record CardDataDTO
 {
     public string? Name { get; set; }
     public string? Lang { get; set; }

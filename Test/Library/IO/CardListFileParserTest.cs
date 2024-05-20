@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 
+using FluentAssertions;
 using Moq;
 
 namespace Library.IO.Tests;
@@ -21,9 +22,9 @@ public class CardListFileParserTest
         var result = parser.GetDeckFromFile(filePath);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal("file", result.Name);
-        Assert.Empty(result.Cards);
+        result.Should().NotBeNull();
+        result.Name.Should().Be("file");
+        result.Cards.Should().BeEmpty();
     }
 
     [Fact]
@@ -45,11 +46,11 @@ public class CardListFileParserTest
 
         // Assert
         var cardA = result.Cards[0];
-        Assert.Equal("Card A", cardA.Name);
-        Assert.Equal(1, cardA.Quantity);
-        Assert.Null(cardA.ExpansionCode);
-        Assert.False(cardA.Foil);
-        Assert.False(cardA.Etched);
+        cardA.Name.Should().Be("Card A");
+        cardA.Quantity.Should().Be(1);
+        cardA.ExpansionCode.Should().BeNull();
+        cardA.Foil.Should().BeFalse();
+        cardA.Etched.Should().BeFalse();
     }
 
     [Fact]
@@ -71,11 +72,11 @@ public class CardListFileParserTest
 
         // Assert
         var cardB = result.Cards[0];
-        Assert.Equal("Card B", cardB.Name);
-        Assert.Equal(2, cardB.Quantity);
-        Assert.Null(cardB.ExpansionCode);
-        Assert.False(cardB.Foil);
-        Assert.False(cardB.Etched);
+        cardB.Name.Should().Be("Card B");
+        cardB.Quantity.Should().Be(2);
+        cardB.ExpansionCode.Should().BeNull();
+        cardB.Foil.Should().BeFalse();
+        cardB.Etched.Should().BeFalse();
     }
 
     [Fact]
@@ -97,11 +98,11 @@ public class CardListFileParserTest
 
         // Assert
         var cardC = result.Cards[0];
-        Assert.Equal("Card C", cardC.Name);
-        Assert.Equal(1, cardC.Quantity);
-        Assert.Equal("EXP", cardC.ExpansionCode);
-        Assert.False(cardC.Foil);
-        Assert.False(cardC.Etched);
+        cardC.Name.Should().Be("Card C");
+        cardC.Quantity.Should().Be(1);
+        cardC.ExpansionCode.Should().Be("EXP");
+        cardC.Foil.Should().BeFalse();
+        cardC.Etched.Should().BeFalse();
     }
 
     [Fact]
@@ -123,11 +124,11 @@ public class CardListFileParserTest
 
         // Assert
         var cardD = result.Cards[0];
-        Assert.Equal("Card D", cardD.Name);
-        Assert.Equal(1, cardD.Quantity);
-        Assert.Null(cardD.ExpansionCode);
-        Assert.True(cardD.Foil);
-        Assert.False(cardD.Etched);
+        cardD.Name.Should().Be("Card D");
+        cardD.Quantity.Should().Be(1);
+        cardD.ExpansionCode.Should().BeNull();
+        cardD.Foil.Should().BeTrue();
+        cardD.Etched.Should().BeFalse();
     }
 
     [Fact]
@@ -149,11 +150,11 @@ public class CardListFileParserTest
 
         // Assert
         var cardE = result.Cards[0];
-        Assert.Equal("Card E", cardE.Name);
-        Assert.Equal(1, cardE.Quantity);
-        Assert.Null(cardE.ExpansionCode);
-        Assert.False(cardE.Foil);
-        Assert.True(cardE.Etched);
+        cardE.Name.Should().Be("Card E");
+        cardE.Quantity.Should().Be(1);
+        cardE.ExpansionCode.Should().BeNull();
+        cardE.Foil.Should().BeFalse();
+        cardE.Etched.Should().BeTrue();
     }
 
     [Fact]
@@ -177,35 +178,35 @@ public class CardListFileParserTest
         var result = parser.GetDeckFromFile(filePath);
 
         // Assert
-        Assert.Equal(4, result.Cards.Count);
+        result.Cards.Count.Should().Be(4);
 
         var cardF = result.Cards[0];
-        Assert.Equal("Card F", cardF.Name);
-        Assert.Equal(2, cardF.Quantity);
-        Assert.Null(cardF.ExpansionCode);
-        Assert.False(cardF.Foil);
-        Assert.False(cardF.Etched);
+        cardF.Name.Should().Be("Card F");
+        cardF.Quantity.Should().Be(2);
+        cardF.ExpansionCode.Should().BeNull();
+        cardF.Foil.Should().BeFalse();
+        cardF.Etched.Should().BeFalse();
 
         // Assert Card G
         var cardG = result.Cards[1];
-        Assert.Equal("Card G", cardG.Name);
-        Assert.Equal(1, cardG.Quantity);
-        Assert.Equal("EXP", cardG.ExpansionCode);
-        Assert.False(cardG.Foil);
-        Assert.False(cardG.Etched);
+        cardG.Name.Should().Be("Card G");
+        cardG.Quantity.Should().Be(1);
+        cardG.ExpansionCode.Should().Be("EXP");
+        cardG.Foil.Should().BeFalse();
+        cardG.Etched.Should().BeFalse();
 
         // Assert Card H
         var cardH = result.Cards[2];
-        Assert.Equal("Card H", cardH.Name);
-        Assert.Equal(3, cardH.Quantity);
-        Assert.Null(cardH.ExpansionCode);
+        cardH.Name.Should().Be("Card H");
+        cardH.Quantity.Should().Be(3);
+        cardH.ExpansionCode.Should().BeNull();
 
         // Assert Card I
         var cardI = result.Cards[3];
-        Assert.Equal("Card I", cardI.Name);
-        Assert.Equal(1, cardI.Quantity);
-        Assert.Null(cardI.ExpansionCode);
-        Assert.False(cardI.Foil);
-        Assert.True(cardI.Etched);
+        cardI.Name.Should().Be("Card I");
+        cardI.Quantity.Should().Be(1);
+        cardI.ExpansionCode.Should().BeNull();
+        cardI.Foil.Should().BeFalse();
+        cardI.Etched.Should().BeTrue();
     }
 }
