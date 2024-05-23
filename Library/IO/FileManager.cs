@@ -20,8 +20,8 @@ public interface IFileManager
     /// Creates an output folder with the specified path.
     /// </summary>
     /// <param name="path">The path of the output folder. If null, a default path will be used.</param>
-    /// <returns>The path of the created output folder.</returns>
-    string CreateOutputFolder(string? path);
+    /// <returns>The path of the created output folder or null if operation failed.</returns>
+    string? CreateOutputFolder(string? path);
 
     /// <summary>
     /// Checks if a directory exists at the specified path.
@@ -48,9 +48,9 @@ public interface IFileManager
     /// Returns the correct word file path based on the specified path and deck name.
     /// </summary>
     /// <param name="path">The path of the word file. If null, a default path will be used.</param>
-    /// <param name="deckName">The name of the deck. If null, a default deck name will be used.</param>
+    /// <param name="deckName">The name of the deck.</param>
     /// <returns>The correct word file path.</returns>
-    string ReturnCorrectWordFilePath(string? path, string? deckName = null);
+    string ReturnCorrectWordFilePath(string? path, string deckName = FilePaths.DEFAULT_WORD_FILE_NAME);
 }
 
 public class FileManager(ILogger<FileManager> logger) 
@@ -71,13 +71,21 @@ public class FileManager(ILogger<FileManager> logger)
         }
     }
 
-    public string CreateOutputFolder(string? path)
+    public string? CreateOutputFolder(string? path)
     {
         path ??= Path.Combine(Directory.GetCurrentDirectory(), FilePaths.DEFAULT_FOLDER_NAME);
 
         if (!Directory.Exists(path))
         {
-            Directory.CreateDirectory(path);
+            try
+            {
+                Directory.CreateDirectory(path);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in creating output folder");
+                return null;
+            }
         }
 
         return Path.GetFullPath(path);
@@ -116,15 +124,18 @@ public class FileManager(ILogger<FileManager> logger)
         return lines;
     }
 
-    public string ReturnCorrectWordFilePath(string? path, string? deckName = null)
+    public string ReturnCorrectWordFilePath(string? path, string deckName = FilePaths.DEFAULT_WORD_FILE_NAME)
     {
+        if (string.IsNullOrEmpty(deckName))
+        {
+            deckName = FilePaths.DEFAULT_WORD_FILE_NAME;
+        }
+
         if (Directory.Exists(path)) 
         {
             return Path.Combine(path, $"{deckName}.docx");
         }
 
-        return Path.Combine(Directory.GetCurrentDirectory(),
-            FilePaths.DEFAULT_FOLDER_NAME,
-            deckName != null ? $"{deckName}.docx" : FilePaths.DEFAULT_WORD_FILE_NAME);
+        return Path.Combine(Directory.GetCurrentDirectory(), $"{deckName}.docx");
     }
 }

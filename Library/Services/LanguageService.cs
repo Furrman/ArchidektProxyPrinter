@@ -37,7 +37,7 @@ public class LanguageService(ILogger<LanguageService> logger) : ILanguageService
         LanguageCodes.CHINESE_TRADITIONAL_CODE_CODE
     ];
 
-    public bool IsValidLanguage(string? languageCode) => languageCode is null || _languages.Contains(languageCode);
+    public bool IsValidLanguage(string? languageCode) => languageCode is not null && _languages.Contains(languageCode);
 
     public string AvailableLanguages => string.Join(", ", _languages);
 }

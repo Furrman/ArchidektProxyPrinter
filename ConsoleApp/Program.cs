@@ -63,7 +63,7 @@ internal class Program
             }
 
             var languageService = serviceProvider.GetService<ILanguageService>()!;
-            if (languageService.IsValidLanguage(languageCode) == false)
+            if (languageCode is not null && languageService.IsValidLanguage(languageCode) == false)
             {
                 ConsoleUtility.WriteErrorMessage("You have to specify correct language code.");
                 ConsoleUtility.WriteErrorMessage($"Language codes: {languageService.AvailableLanguages}");
@@ -81,7 +81,7 @@ internal class Program
                 return;
             }
 
-            var archidektPrinter = serviceProvider.GetService<IArchidektPrinter>()!;
+            var archidektPrinter = serviceProvider.GetService<IMTGProxyPrinter>()!;
             archidektPrinter.ProgressUpdate += UpdateProgressOnConsole;
             archidektPrinter.GenerateWord(deckId, 
                 deckFilePath, 

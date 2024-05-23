@@ -2,8 +2,9 @@ using Microsoft.Extensions.Logging;
 
 using FluentAssertions;
 using Moq;
+using Library.IO;
 
-namespace Library.IO.Tests;
+namespace UnitTests.Library.IO;
 
 public class CardListFileParserTest
 {

@@ -36,7 +36,7 @@ public interface IMagicCardService
     /// <param name="deckId">The ID of the deck.</param>
     /// <param name="languageCode">The language code for localization (optional).</param>
     /// <returns>A task representing the asynchronous operation. The task result contains the deck details DTO, or null if not found.</returns>
-    Task<DeckDetailsDTO?> GetDeckWithCardPrintDetails(int deckId, string? languageCode = null, int tokenCopies = 0, bool printAllTokens = false);
+    Task<DeckDetailsDTO?> GetOnlineDeckWithCardPrintDetails(int deckId, string? languageCode = null, int tokenCopies = 0, bool printAllTokens = false);
 
     /// <summary>
     /// Updates the card image links.
@@ -77,7 +77,7 @@ public class MagicCardService(ILogger<MagicCardService> logger, IArchidektApiCli
         }
     }
 
-    public async Task<DeckDetailsDTO?> GetDeckWithCardPrintDetails(int deckId, string? languageCode = null, int tokenCopies = 0, bool printAllTokens = false)
+    public async Task<DeckDetailsDTO?> GetOnlineDeckWithCardPrintDetails(int deckId, string? languageCode = null, int tokenCopies = 0, bool printAllTokens = false)
     {
         DeckDetailsDTO? deck = null;
 
