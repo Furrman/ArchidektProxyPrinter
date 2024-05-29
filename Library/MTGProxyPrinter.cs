@@ -1,5 +1,4 @@
 ﻿using Library.IO;
-using Library.Models.DTO;
 using Library.Models.Events;
 using Library.Services;
 
@@ -53,24 +52,23 @@ public class MTGProxyPrinter : IMTGProxyPrinter
 {
     public event EventHandler<UpdateProgressEventArgs>? ProgressUpdate;
 
-    private readonly IMagicCardService _magicCardService;
-    private readonly IWordGeneratorService _wordGeneratorService;
-    private readonly IFileManager _fileManager;
+    private readonly IArchidektService _archidektService;
+    private readonly IScryfallService _scryfallService;
     private readonly ICardListFileParser _fileParser;
+    private readonly IWordGeneratorService _wordGeneratorService;
 
     public MTGProxyPrinter(
-        IMagicCardService magicCardService,
-        IWordGeneratorService wordGeneratorService,
-        IFileManager fileManager,
-        ICardListFileParser fileParser
-        )
+        IArchidektService archidektService,
+        IScryfallService scryfallService,
+        ICardListFileParser fileParser,
+        IWordGeneratorService wordGeneratorService)
     {
-        _magicCardService = magicCardService;
-        _wordGeneratorService = wordGeneratorService;
-        _fileManager = fileManager;
+        _archidektService = archidektService;
+        _scryfallService = scryfallService;
         _fileParser = fileParser;
+        _wordGeneratorService = wordGeneratorService;
 
-        _magicCardService.GetDeckDetailsProgress += UpdateGetDeckDetails;
+        _scryfallService.GetDeckDetailsProgress += UpdateGetDeckDetails;
         _wordGeneratorService.GenerateWordProgress += UpdateGenerateWord;
     }
 
@@ -98,14 +96,16 @@ public class MTGProxyPrinter : IMTGProxyPrinter
         bool printAllTokens = false,
         bool saveImages = false)
     {
-        var deckDetails = await _magicCardService.GetOnlineDeckWithCardPrintDetails(deckId, languageCode, tokenCopies, printAllTokens);
-        if (deckDetails is null)
+        var deck = await _archidektService.GetDeckOnline(deckId);
+        if (deck is null)
         {
             RaiseError("Getting deck details returned error");
             return;
         }
 
-        await WriteDeckToWord(deckDetails, outputDirPath, outputFileName ?? deckDetails.Name, saveImages);
+        await _scryfallService.UpdateCardImageLinks(deck.Cards, languageCode, tokenCopies, printAllTokens);
+
+        await _wordGeneratorService.GenerateWord(deck, outputFileName, outputDirPath, saveImages);
     }
 
     public async Task GenerateWordFromDeckInFile(
@@ -118,20 +118,14 @@ public class MTGProxyPrinter : IMTGProxyPrinter
         bool saveImages = false)
     {
         var deck = _fileParser.GetDeckFromFile(deckListFilePath);
-        await _magicCardService.UpdateCardImageLinks(deck.Cards, languageCode, tokenCopies, printAllTokens);
+        if (deck is null)
+        {
+            RaiseError("Error in parsing deck list file");
+            return;
+        }
 
-        outputFileName ??= _fileManager.GetFilename(deckListFilePath);
+        await _scryfallService.UpdateCardImageLinks(deck.Cards, languageCode, tokenCopies, printAllTokens);
 
-        await _wordGeneratorService.GenerateWord(deck, outputFileName, outputDirPath, saveImages);
-    }
-
-
-    private async Task WriteDeckToWord(
-        DeckDetailsDTO deck, 
-        string? outputDirPath = null, 
-        string? outputFileName = null,
-        bool saveImages = false)
-    {
         await _wordGeneratorService.GenerateWord(deck, outputFileName, outputDirPath, saveImages);
     }
 

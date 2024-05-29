@@ -7,6 +7,15 @@ namespace UnitTests.Library.Services;
 
 public class LanguageServiceTests
 {
+    private readonly Mock<ILogger<LanguageService>> _loggerMock;
+    private readonly LanguageService _service;
+
+    public LanguageServiceTests()
+    {
+        _loggerMock = new Mock<ILogger<LanguageService>>();
+        _service = new LanguageService(_loggerMock.Object);
+    }
+
     [Theory]
     [InlineData("en")]
     [InlineData("es")]
@@ -20,12 +29,8 @@ public class LanguageServiceTests
     [InlineData("zht")]
     public void IsValidLanguage_ValidLanguageCode_ReturnsTrue(string? languageCode)
     {
-        // Arrange
-        var loggerMock = new Mock<ILogger<LanguageService>>();
-        var service = new LanguageService(loggerMock.Object);
-
         // Act
-        bool result = service.IsValidLanguage(languageCode);
+        bool result = _service.IsValidLanguage(languageCode);
 
         // Assert
         result.Should().BeTrue();
@@ -38,12 +43,8 @@ public class LanguageServiceTests
     [InlineData("pt-BR")]
     public void IsValidLanguage_InvalidLanguageCode_ReturnsFalse(string? languageCode)
     {
-        // Arrange
-        var loggerMock = new Mock<ILogger<LanguageService>>();
-        var service = new LanguageService(loggerMock.Object);
-
         // Act
-        bool result = service.IsValidLanguage(languageCode);
+        bool result = _service.IsValidLanguage(languageCode);
 
         // Assert
         result.Should().BeFalse();
@@ -52,12 +53,8 @@ public class LanguageServiceTests
     [Fact]
     public void IsValidLanguage_NullLanguageCode_ReturnsFalse()
     {
-        // Arrange
-        var loggerMock = new Mock<ILogger<LanguageService>>();
-        var service = new LanguageService(loggerMock.Object);
-
         // Act
-        bool result = service.IsValidLanguage(null);
+        bool result = _service.IsValidLanguage(null);
 
         // Assert
         result.Should().BeFalse();
@@ -67,12 +64,10 @@ public class LanguageServiceTests
     public void AvailableLanguages_ReturnsCommaSeparatedLanguages()
     {
         // Arrange
-        var loggerMock = new Mock<ILogger<LanguageService>>();
-        var service = new LanguageService(loggerMock.Object);
         string expectedLanguages = "en, es, fr, de, it, pt, ja, ko, zhs, zht";
 
         // Act
-        string availableLanguages = service.AvailableLanguages;
+        string availableLanguages = _service.AvailableLanguages;
 
         // Assert
         availableLanguages.Should().Be(expectedLanguages);

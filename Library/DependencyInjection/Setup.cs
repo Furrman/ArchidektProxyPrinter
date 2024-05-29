@@ -20,8 +20,8 @@ public static class Setup
             .AddScoped<IWordDocumentWrapper, WordDocumentWrapper>()
             // Services
             .AddScoped<IArchidektService, ArchidektService>()
+            .AddScoped<IScryfallService, ScryfallService>()
             .AddScoped<ILanguageService, LanguageService>()
-            .AddScoped<IMagicCardService, MagicCardService>()
             .AddScoped<IWordGeneratorService, WordGeneratorService>()
         ;
     }

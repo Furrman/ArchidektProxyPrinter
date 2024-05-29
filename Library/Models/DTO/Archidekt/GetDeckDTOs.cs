@@ -1,11 +1,11 @@
 namespace Library.Models.DTO.Archidekt;
 
-public record DeckDTO(ICollection<DeckCardDTO>? Cards, string? Name);
+public record DeckDTO(string? Name, ICollection<DeckCardDTO>? Cards);
 
-public record DeckCardDTO(CardDTO? Card, int Quantity, string? Modifier);
+public record DeckCardDTO(CardDTO? Card, int Quantity, string? Modifier = null);
 
-public record CardDTO(OracleCardDTO? OracleCard, EditionDTO? Edition, string? CollectorNumber);
+public record CardDTO(OracleCardDTO? OracleCard, EditionDTO? Edition, string? CollectorNumber = null);
 
-public record OracleCardDTO(string? Name, string? Layout);
+public record OracleCardDTO(string? Name = null, string? Layout = null);
 
-public record EditionDTO(string? EditionCode);
+public record EditionDTO(string? EditionCode = null);

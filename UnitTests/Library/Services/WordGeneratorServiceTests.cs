@@ -11,18 +11,29 @@ namespace UnitTests.Library.Services;
 
 public class WordGeneratorServiceTests
 {
+    private readonly Mock<ILogger<WordGeneratorService>> _loggerMock;
+    private readonly Mock<IScryfallApiClient> _scryfallClientMock;
+    private readonly Mock<IWordDocumentWrapper> _wordDocumentWrapperMock;
+    private readonly Mock<IFileManager> _fileManagerMock;
+    private readonly WordGeneratorService _service;
+
+    public WordGeneratorServiceTests()
+    {
+        _loggerMock = new Mock<ILogger<WordGeneratorService>>();
+        _scryfallClientMock = new Mock<IScryfallApiClient>();
+        _wordDocumentWrapperMock = new Mock<IWordDocumentWrapper>();
+        _fileManagerMock = new Mock<IFileManager>();
+
+        _service = new WordGeneratorService(_loggerMock.Object, _scryfallClientMock.Object, _wordDocumentWrapperMock.Object, _fileManagerMock.Object);
+    }
+
     [Fact]
     public async Task GenerateWord_ValidDeckDetails_SaveWordDocument()
     {
         // Arrange
-        var loggerMock = new Mock<ILogger<WordGeneratorService>>();
-        var scryfallClientMock = new Mock<IScryfallApiClient>();
-        var wordDocumentWrapperMock = new Mock<IWordDocumentWrapper>();
-        var fileManagerMock = new Mock<IFileManager>();
-        fileManagerMock.Setup(f => f.CreateOutputFolder(It.IsAny<string?>())).Returns("output");
-        fileManagerMock.Setup(f => f.ReturnCorrectWordFilePath(It.IsAny<string?>(), It.IsAny<string>())).Returns((string path, string deckName) => path + deckName + ".docx");
+        _fileManagerMock.Setup(f => f.CreateOutputFolder(It.IsAny<string?>())).Returns("output");
+        _fileManagerMock.Setup(f => f.ReturnCorrectWordFilePath(It.IsAny<string?>(), It.IsAny<string>())).Returns((string path, string deckName) => path + deckName + ".docx");
 
-        var service = new WordGeneratorService(loggerMock.Object, scryfallClientMock.Object, wordDocumentWrapperMock.Object, fileManagerMock.Object);
         var deck = new DeckDetailsDTO()
         {
             Name = "Deck",
@@ -34,46 +45,36 @@ public class WordGeneratorServiceTests
         string wordFilePath = "word.docx";
 
         // Act
-        await service.GenerateWord(deck, wordFilePath);
+        await _service.GenerateWord(deck, wordFilePath);
 
         // Assert
-        wordDocumentWrapperMock.Verify(w => w.Save(), Times.Once);
+        _wordDocumentWrapperMock.Verify(w => w.Save(), Times.Once);
     }
 
     [Fact]
     public async Task GenerateWord_EmptyDeckDetails_DoesNotGenerateWordDocument()
     {
         // Arrange
-        var loggerMock = new Mock<ILogger<WordGeneratorService>>();
-        var scryfallClientMock = new Mock<IScryfallApiClient>();
-        var wordDocumentWrapperMock = new Mock<IWordDocumentWrapper>();
-        var fileManagerMock = new Mock<IFileManager>();
-        fileManagerMock.Setup(f => f.CreateOutputFolder(It.IsAny<string?>())).Returns("output");
-        fileManagerMock.Setup(f => f.ReturnCorrectWordFilePath(It.IsAny<string?>(), It.IsAny<string>())).Returns((string path, string deckName) => path + deckName + ".docx");
+        _fileManagerMock.Setup(f => f.CreateOutputFolder(It.IsAny<string?>())).Returns("output");
+        _fileManagerMock.Setup(f => f.ReturnCorrectWordFilePath(It.IsAny<string?>(), It.IsAny<string>())).Returns((string path, string deckName) => path + deckName + ".docx");
 
-        var service = new WordGeneratorService(loggerMock.Object, scryfallClientMock.Object, wordDocumentWrapperMock.Object, fileManagerMock.Object);
         DeckDetailsDTO deck = new();
         string wordFilePath = "word.docx";
 
         // Act
-        await service.GenerateWord(deck, wordFilePath);
+        await _service.GenerateWord(deck, wordFilePath);
 
         // Assert
-        wordDocumentWrapperMock.Verify(w => w.Save(), Times.Never);
+        _wordDocumentWrapperMock.Verify(w => w.Save(), Times.Never);
     }
 
     [Fact]
     public async Task GenerateWord_SaveImagesEnabled_SaveImages()
     {
         // Arrange
-        var loggerMock = new Mock<ILogger<WordGeneratorService>>();
-        var scryfallClientMock = new Mock<IScryfallApiClient>();
-        var wordDocumentWrapperMock = new Mock<IWordDocumentWrapper>();
-        var fileManagerMock = new Mock<IFileManager>();
-        fileManagerMock.Setup(f => f.CreateOutputFolder(It.IsAny<string>())).Returns("output");
-        fileManagerMock.Setup(f => f.ReturnCorrectWordFilePath(It.IsAny<string?>(), It.IsAny<string>())).Returns((string path, string deckName) => path + deckName + ".docx");
+        _fileManagerMock.Setup(f => f.CreateOutputFolder(It.IsAny<string>())).Returns("output");
+        _fileManagerMock.Setup(f => f.ReturnCorrectWordFilePath(It.IsAny<string?>(), It.IsAny<string>())).Returns((string path, string deckName) => path + deckName + ".docx");
 
-        var service = new WordGeneratorService(loggerMock.Object, scryfallClientMock.Object, wordDocumentWrapperMock.Object, fileManagerMock.Object);
         var deck = new DeckDetailsDTO()
         {
             Name = "Deck",
@@ -86,24 +87,19 @@ public class WordGeneratorServiceTests
         bool saveImages = true;
 
         // Act
-        await service.GenerateWord(deck, wordFilePath, saveImages: saveImages);
+        await _service.GenerateWord(deck, wordFilePath, saveImages: saveImages);
 
         // Assert
-        fileManagerMock.Verify(f => f.CreateImageFile(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<string>()), Times.AtLeastOnce);
+        _fileManagerMock.Verify(f => f.CreateImageFile(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<string>()), Times.AtLeastOnce);
     }
 
     [Fact]
     public async Task GenerateWord_SaveImagesDisabled_DoesNotSaveImages()
     {
         // Arrange
-        var loggerMock = new Mock<ILogger<WordGeneratorService>>();
-        var scryfallClientMock = new Mock<IScryfallApiClient>();
-        var wordDocumentWrapperMock = new Mock<IWordDocumentWrapper>();
-        var fileManagerMock = new Mock<IFileManager>();
-        fileManagerMock.Setup(f => f.CreateOutputFolder(It.IsAny<string>())).Returns("output");
-        fileManagerMock.Setup(f => f.ReturnCorrectWordFilePath(It.IsAny<string?>(), It.IsAny<string>())).Returns((string path, string deckName) => path + deckName + ".docx");
+        _fileManagerMock.Setup(f => f.CreateOutputFolder(It.IsAny<string>())).Returns("output");
+        _fileManagerMock.Setup(f => f.ReturnCorrectWordFilePath(It.IsAny<string?>(), It.IsAny<string>())).Returns((string path, string deckName) => path + deckName + ".docx");
 
-        var service = new WordGeneratorService(loggerMock.Object, scryfallClientMock.Object, wordDocumentWrapperMock.Object, fileManagerMock.Object);
         var deck = new DeckDetailsDTO()
         {
             Name = "Deck",
@@ -116,9 +112,9 @@ public class WordGeneratorServiceTests
         bool saveImages = false;
 
         // Act
-        await service.GenerateWord(deck, wordFilePath, saveImages: saveImages);
+        await _service.GenerateWord(deck, wordFilePath, saveImages: saveImages);
 
         // Assert
-        fileManagerMock.Verify(f => f.CreateImageFile(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        _fileManagerMock.Verify(f => f.CreateImageFile(It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }
 }

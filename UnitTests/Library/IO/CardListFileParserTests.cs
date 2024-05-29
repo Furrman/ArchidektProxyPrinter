@@ -2,25 +2,34 @@ using Microsoft.Extensions.Logging;
 
 using FluentAssertions;
 using Moq;
+
 using Library.IO;
 
 namespace UnitTests.Library.IO;
 
 public class CardListFileParserTest
 {
+    private readonly Mock<ILogger<CardListFileParser>> _loggerMock;
+    private readonly Mock<IFileManager> _fileManagerMock;
+    private readonly CardListFileParser _parser;
+
+    public CardListFileParserTest()
+    {
+        _loggerMock = new Mock<ILogger<CardListFileParser>>();
+        _fileManagerMock = new Mock<IFileManager>();
+        _parser = new CardListFileParser(_loggerMock.Object, _fileManagerMock.Object);
+    }
+
     [Fact]
     public void GetDeckFromFile_CorrectFilePath_ReturnsDeckWithNameEqualFilename()
     {
         // Arrange
         var filePath = "path/to/file.txt";
-        var loggerMock = new Mock<ILogger<CardListFileParser>>();
-        var fileManagerMock = new Mock<IFileManager>();
-        fileManagerMock.Setup(fm => fm.GetFilename(filePath)).Returns("file");
-        fileManagerMock.Setup(fm => fm.GetLinesFromTextFile(filePath)).Returns([]);
-        var parser = new CardListFileParser(loggerMock.Object, fileManagerMock.Object);
+        _fileManagerMock.Setup(fm => fm.GetFilename(filePath)).Returns("file");
+        _fileManagerMock.Setup(fm => fm.GetLinesFromTextFile(filePath)).Returns([]);
 
         // Act
-        var result = parser.GetDeckFromFile(filePath);
+        var result = _parser.GetDeckFromFile(filePath);
 
         // Assert
         result.Should().NotBeNull();
@@ -33,17 +42,14 @@ public class CardListFileParserTest
     {
         // Arrange
         var filePath = "path/to/file.txt";
-        var loggerMock = new Mock<ILogger<CardListFileParser>>();
-        var fileManagerMock = new Mock<IFileManager>();
-        fileManagerMock.Setup(fm => fm.GetFilename(filePath)).Returns("file");
-        fileManagerMock.Setup(fm => fm.GetLinesFromTextFile(filePath)).Returns(
+        _fileManagerMock.Setup(fm => fm.GetFilename(filePath)).Returns("file");
+        _fileManagerMock.Setup(fm => fm.GetLinesFromTextFile(filePath)).Returns(
         [
             "Card A"
         ]);
-        var parser = new CardListFileParser(loggerMock.Object, fileManagerMock.Object);
 
         // Act
-        var result = parser.GetDeckFromFile(filePath);
+        var result = _parser.GetDeckFromFile(filePath);
 
         // Assert
         var cardA = result.Cards[0];
@@ -59,17 +65,14 @@ public class CardListFileParserTest
     {
         // Arrange
         var filePath = "path/to/file.txt";
-        var loggerMock = new Mock<ILogger<CardListFileParser>>();
-        var fileManagerMock = new Mock<IFileManager>();
-        fileManagerMock.Setup(fm => fm.GetFilename(filePath)).Returns("file");
-        fileManagerMock.Setup(fm => fm.GetLinesFromTextFile(filePath)).Returns(
+        _fileManagerMock.Setup(fm => fm.GetFilename(filePath)).Returns("file");
+        _fileManagerMock.Setup(fm => fm.GetLinesFromTextFile(filePath)).Returns(
         [
             "2x Card B"
         ]);
-        var parser = new CardListFileParser(loggerMock.Object, fileManagerMock.Object);
 
         // Act
-        var result = parser.GetDeckFromFile(filePath);
+        var result = _parser.GetDeckFromFile(filePath);
 
         // Assert
         var cardB = result.Cards[0];
@@ -85,17 +88,14 @@ public class CardListFileParserTest
     {
         // Arrange
         var filePath = "path/to/file.txt";
-        var loggerMock = new Mock<ILogger<CardListFileParser>>();
-        var fileManagerMock = new Mock<IFileManager>();
-        fileManagerMock.Setup(fm => fm.GetFilename(filePath)).Returns("file");
-        fileManagerMock.Setup(fm => fm.GetLinesFromTextFile(filePath)).Returns(
+        _fileManagerMock.Setup(fm => fm.GetFilename(filePath)).Returns("file");
+        _fileManagerMock.Setup(fm => fm.GetLinesFromTextFile(filePath)).Returns(
         [
             "1x Card C (EXP)"
         ]);
-        var parser = new CardListFileParser(loggerMock.Object, fileManagerMock.Object);
 
         // Act
-        var result = parser.GetDeckFromFile(filePath);
+        var result = _parser.GetDeckFromFile(filePath);
 
         // Assert
         var cardC = result.Cards[0];
@@ -111,17 +111,14 @@ public class CardListFileParserTest
     {
         // Arrange
         var filePath = "path/to/file.txt";
-        var loggerMock = new Mock<ILogger<CardListFileParser>>();
-        var fileManagerMock = new Mock<IFileManager>();
-        fileManagerMock.Setup(fm => fm.GetFilename(filePath)).Returns("file");
-        fileManagerMock.Setup(fm => fm.GetLinesFromTextFile(filePath)).Returns(
+        _fileManagerMock.Setup(fm => fm.GetFilename(filePath)).Returns("file");
+        _fileManagerMock.Setup(fm => fm.GetLinesFromTextFile(filePath)).Returns(
         [
             "1x Card D *F*"
         ]);
-        var parser = new CardListFileParser(loggerMock.Object, fileManagerMock.Object);
 
         // Act
-        var result = parser.GetDeckFromFile(filePath);
+        var result = _parser.GetDeckFromFile(filePath);
 
         // Assert
         var cardD = result.Cards[0];
@@ -137,17 +134,14 @@ public class CardListFileParserTest
     {
         // Arrange
         var filePath = "path/to/file.txt";
-        var loggerMock = new Mock<ILogger<CardListFileParser>>();
-        var fileManagerMock = new Mock<IFileManager>();
-        fileManagerMock.Setup(fm => fm.GetFilename(filePath)).Returns("file");
-        fileManagerMock.Setup(fm => fm.GetLinesFromTextFile(filePath)).Returns(
+        _fileManagerMock.Setup(fm => fm.GetFilename(filePath)).Returns("file");
+        _fileManagerMock.Setup(fm => fm.GetLinesFromTextFile(filePath)).Returns(
         [
             "1x Card E *E*"
         ]);
-        var parser = new CardListFileParser(loggerMock.Object, fileManagerMock.Object);
 
         // Act
-        var result = parser.GetDeckFromFile(filePath);
+        var result = _parser.GetDeckFromFile(filePath);
 
         // Assert
         var cardE = result.Cards[0];

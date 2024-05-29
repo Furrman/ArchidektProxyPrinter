@@ -2,7 +2,6 @@ using Microsoft.Extensions.Logging;
 
 using Library.Clients;
 using Library.Models.DTO;
-using Library.Models.DTO.Archidekt;
 using Library.Models.Events;
 using Library.Models.DTO.Scryfall;
 using Library.Constants;
@@ -11,9 +10,9 @@ using Library.Helpers;
 namespace Library.Services;
 
 /// <summary>
-/// Represents a service for interacting with Magic cards.
+/// Represents a service for interacting with Magic cards via Scryfall.
 /// </summary>
-public interface IMagicCardService
+public interface IScryfallService
 {
     /// <summary>
     /// Event that is raised to report the progress of getting deck details.
@@ -31,14 +30,6 @@ public interface IMagicCardService
     Task DownloadCardSideImage(string imageUrl, string folderPath, string filename, int quantity);
 
     /// <summary>
-    /// Gets the deck details along with card print details.
-    /// </summary>
-    /// <param name="deckId">The ID of the deck.</param>
-    /// <param name="languageCode">The language code for localization (optional).</param>
-    /// <returns>A task representing the asynchronous operation. The task result contains the deck details DTO, or null if not found.</returns>
-    Task<DeckDetailsDTO?> GetOnlineDeckWithCardPrintDetails(int deckId, string? languageCode = null, int tokenCopies = 0, bool printAllTokens = false);
-
-    /// <summary>
     /// Updates the card image links.
     /// </summary>
     /// <param name="cards">The list of card entries to update.</param>
@@ -47,14 +38,13 @@ public interface IMagicCardService
     Task UpdateCardImageLinks(List<CardEntryDTO> cards, string? languageCode = null, int tokenCopies = 0, bool printAllTokens = false);
 }
 
-public class MagicCardService(ILogger<MagicCardService> logger, IArchidektApiClient archidektApiClient, IScryfallApiClient scryfallApiClient) 
-    : IMagicCardService
+public class ScryfallService(IScryfallApiClient scryfallApiClient, ILogger<ScryfallService> logger) 
+    : IScryfallService
 {
     public event EventHandler<GetDeckDetailsProgressEventArgs>? GetDeckDetailsProgress;
 
-    private readonly ILogger<MagicCardService> _logger = logger;
-    private readonly IArchidektApiClient _archidektApiClient = archidektApiClient;
     private readonly IScryfallApiClient _scryfallApiClient = scryfallApiClient;
+    private readonly ILogger<ScryfallService> _logger = logger;
 
 
     public async Task DownloadCardSideImage(string imageUrl, string folderPath, string filename, int quantity)
@@ -75,29 +65,6 @@ public class MagicCardService(ILogger<MagicCardService> logger, IArchidektApiCli
         {
             _logger.LogError(ex, "Error in downloading image from the Scryfall");
         }
-    }
-
-    public async Task<DeckDetailsDTO?> GetOnlineDeckWithCardPrintDetails(int deckId, string? languageCode = null, int tokenCopies = 0, bool printAllTokens = false)
-    {
-        DeckDetailsDTO? deck = null;
-
-        var deckDto = await _archidektApiClient.GetDeck(deckId);
-        if (deckDto is null)
-        {
-            _logger.LogError("Deck not loaded from internet");
-            return deck;
-        }
-        if (deckDto.Cards is null || deckDto.Cards.Count == 0)
-        {
-            _logger.LogError("Deck is empty");
-            return deck;
-        }
-
-        deck = new DeckDetailsDTO { Name = deckDto.Name!, Cards = ParseCardsToDeck(deckDto.Cards!) };
-
-        await UpdateCardImageLinks(deck.Cards, languageCode, tokenCopies, printAllTokens);
-
-        return deck;
     }
 
     public async Task UpdateCardImageLinks(List<CardEntryDTO> cards, string? languageCode = null, int tokenCopies = 0, bool printAllTokens = false)
@@ -215,32 +182,6 @@ public class MagicCardService(ILogger<MagicCardService> logger, IArchidektApiCli
                 });
             }
         }
-    }
-
-    private List<CardEntryDTO> ParseCardsToDeck(ICollection<DeckCardDTO> cardList)
-    {
-        List<CardEntryDTO> deckCards = []; 
-        foreach (var card in cardList)
-        {
-            var cardName = card.Card?.OracleCard?.Name;
-            if (cardName is null || card.Quantity <= 0)
-            {
-                continue;
-            }
-
-            deckCards.Add(new CardEntryDTO
-            {
-                Name = cardName,
-                Quantity = card.Quantity,
-                CollectorNumber = card.Card?.CollectorNumber,
-                ExpansionCode = card.Card?.Edition?.EditionCode,
-                Art = string.Equals(card.Card?.OracleCard?.Layout, "art_series", StringComparison.OrdinalIgnoreCase),
-                Etched = string.Equals(card.Modifier, "Etched", StringComparison.OrdinalIgnoreCase),
-                Foil = string.Equals(card.Modifier, "Foil", StringComparison.OrdinalIgnoreCase),
-            });
-        }
-
-        return deckCards;
     }
 
     private async Task<CardDataDTO?> SearchCard(CardEntryDTO card, string? languageCode = null)
