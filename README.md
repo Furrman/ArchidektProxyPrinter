@@ -6,7 +6,7 @@ If so, then this application is for you! It allows you to generate a printable a
 
 ## Features
 
-- Download deck list straight from archidekt via url or deck id
+- Download deck list straight from archidekt via url 
 - Get deck list from exported file
 - Add cards number of times per number of quantity
 - Print dual side cards
@@ -40,18 +40,16 @@ If so, then this application is for you! It allows you to generate a printable a
 Call ArchidektProxyPrinter file (can have .exe extension) from command liner with one of the following options:
 
     -- deck-file-path  <String>
-    -- deck-id  <String>
     -- deck-url  <String>
 
 List of all parameters:
 ```
-Usage: ArchidektProxyP [--deck-file-path <String>] [--deck-id <Int32>] [--deck-url <String>] [--language-code <String>] [--token-copies <Int32>] [--print-all-tokens] [--output-path <String>] [--output-file-name <String>] [--store-original-images] [--help] [--version]
+Usage: ArchidektProxyP [--deck-file-path <String>] [--deck-url <String>] [--language-code <String>] [--token-copies <Int32>] [--print-all-tokens] [--output-path <String>] [--output-file-name <String>] [--store-original-images] [--help] [--version]
 
 ArchidektProxyPrinter
 
 Options:
   --deck-file-path <String>      Filepath to exported deck from Archidekt
-  --deck-id <Int32>              ID of the deck in Archidekt
   --deck-url <String>            URL link to deck in Archidekt
   --language-code <String>       Set language for all cards to print
   --token-copies <Int32>         Number of copy for each token
