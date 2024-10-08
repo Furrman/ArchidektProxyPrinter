@@ -5,12 +5,14 @@ using Domain;
 using Domain.IO;
 using Domain.Services;
 using Domain.Models.DTO;
+using Domain.Factories;
 
 namespace UnitTests.Domain;
 
 public class MagicProxyPrinterTests
 {
     private Mock<IArchidektService> _archidektServiceMock;
+    private Mock<IDeckRetrieverFactory> _deckRetrieverFactory;
     private Mock<IScryfallService> _scryfallServiceMock;
     private Mock<ICardListFileParser> _fileParserMock;
     private Mock<IFileManager> _fileManagerMock;
@@ -21,13 +23,14 @@ public class MagicProxyPrinterTests
     public MagicProxyPrinterTests()
     {
         _archidektServiceMock = new Mock<IArchidektService>();
+        _deckRetrieverFactory = new Mock<IDeckRetrieverFactory>();
         _scryfallServiceMock = new Mock<IScryfallService>();
         _fileParserMock = new Mock<ICardListFileParser>();
         _fileManagerMock = new Mock<IFileManager>();
         _wordGeneratorServiceMock = new Mock<IWordGeneratorService>();
 
         _proxyPrinter = new MagicProxyPrinter(
-            _archidektServiceMock.Object,
+            _deckRetrieverFactory.Object,
             _scryfallServiceMock.Object,
             _fileParserMock.Object,
             _fileManagerMock.Object,
@@ -47,16 +50,18 @@ public class MagicProxyPrinterTests
         bool printAllTokens = true;
         bool saveImages = true;
 
+        _deckRetrieverFactory.Setup(x => x.GetDeckRetriever(deckUrl))
+            .Returns(_archidektServiceMock.Object);
         _archidektServiceMock.Setup(x => x.TryExtractDeckIdFromUrl(deckUrl, out It.Ref<int>.IsAny))
             .Returns(true);
-        _archidektServiceMock.Setup(x => x.GetDeckOnline(It.IsAny<int>()))
+        _archidektServiceMock.Setup(x => x.RetrieveDeckFromWeb(It.IsAny<string>()))
             .ReturnsAsync(new DeckDetailsDTO());
 
         // Act
         await _proxyPrinter.GenerateWord(deckUrl, null, outputPath, outputFileName, languageCode, tokenCopies, printAllTokens, saveImages);
 
         // Assert
-        _archidektServiceMock.Verify(x => x.GetDeckOnline(It.IsAny<int>()), Times.Once);
+        _archidektServiceMock.Verify(x => x.RetrieveDeckFromWeb(It.IsAny<string>()), Times.Once);
         _wordGeneratorServiceMock.Verify(x => x.GenerateWord(It.IsAny<DeckDetailsDTO>(), It.IsAny<string>(), It.IsAny<string>(), saveImages), Times.Once);
     }
 
@@ -72,7 +77,7 @@ public class MagicProxyPrinterTests
         bool printAllTokens = true;
         bool saveImages = true;
 
-        _fileManagerMock.Setup(f => f.FileExists(It.IsAny<string?>())).Returns(true);
+        _fileManagerMock.Setup(f => f.FileExists(It.IsAny<string>())).Returns(true);
         _fileParserMock.Setup(x => x.GetDeckFromFile(inputFilePath))
             .Returns(new DeckDetailsDTO());
 

@@ -50,20 +50,20 @@ public class ArchidektServiceTests
     }
 
     [Fact]
-    public async Task GetDeckOnline_WithValidDeckId_ReturnsDeckDetails()
+    public async Task RetrieveDeckFromWeb_WithValidDeckId_ReturnsDeckDetails()
     {
         // Arrange
-        int deckId = 123;
+        string deckUrl = "https://archidekt.com/decks/123456/test";
         var deckDto = new DeckDTO("Test Deck",
         [
             new DeckCardDTO(new CardDTO(new OracleCardDTO("Card 1"), new EditionDTO()), 2),
             new DeckCardDTO(new CardDTO(new OracleCardDTO("Card 2"), new EditionDTO()), 3)
         ]);
 
-        _archidektApiClientMock.Setup(mock => mock.GetDeck(deckId)).ReturnsAsync(deckDto);
+        _archidektApiClientMock.Setup(mock => mock.GetDeck(It.IsAny<int>())).ReturnsAsync(deckDto);
 
         // Act
-        var result = await _service.GetDeckOnline(deckId);
+        var result = await _service.RetrieveDeckFromWeb(deckUrl);
 
         // Assert
         result.Should().NotBeNull();
@@ -76,15 +76,15 @@ public class ArchidektServiceTests
     }
 
     [Fact]
-    public async Task GetDeckOnline_WithInvalidDeckId_ReturnsNull()
+    public async Task RetrieveDeckFromWeb_WithInvalidDeckId_ReturnsNull()
     {
         // Arrange
-        int deckId = 456;
+        string deckUrl = "https://archidekt.com/decks/123456/test";
 
-        _archidektApiClientMock.Setup(mock => mock.GetDeck(deckId)).ReturnsAsync((DeckDTO?)null);
+        _archidektApiClientMock.Setup(mock => mock.GetDeck(It.IsAny<int>())).ReturnsAsync((DeckDTO?)null);
 
         // Act
-        var result = await _service.GetDeckOnline(deckId);
+        var result = await _service.RetrieveDeckFromWeb(deckUrl);
 
         // Assert
         result.Should().BeNull();

@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
 using Domain.Clients;
+using Domain.Factories;
 using Domain.IO;
 using Domain.Services;
 
@@ -15,6 +16,8 @@ public static class Setup
             // Clients
             .AddScoped<IArchidektApiClient, ArchidektApiClient>()
             .AddScoped<IScryfallApiClient, ScryfallApiClient>()
+            // Factories
+            .AddScoped<IDeckRetrieverFactory, DeckRetrieverFactory>()
             // IO
             .AddScoped<ICardListFileParser, CardListFileParser>()
             .AddScoped<IFileManager, FileManager>()

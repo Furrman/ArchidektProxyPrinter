@@ -1,4 +1,5 @@
-﻿using Domain.IO;
+﻿using Domain.Factories;
+using Domain.IO;
 using Domain.Models.Events;
 using Domain.Services;
 
@@ -52,20 +53,20 @@ public class MagicProxyPrinter : IMagicProxyPrinter
 {
     public event EventHandler<UpdateProgressEventArgs>? ProgressUpdate;
 
-    private readonly IArchidektService _archidektService;
+    private readonly IDeckRetrieverFactory _deckRetrieverFactory;
     private readonly IScryfallService _scryfallService;
     private readonly ICardListFileParser _fileParser;
     private readonly IFileManager _fileManager;
     private readonly IWordGeneratorService _wordGeneratorService;
 
     public MagicProxyPrinter(
-        IArchidektService archidektService,
+        IDeckRetrieverFactory deckRetrieverFactory,
         IScryfallService scryfallService,
         ICardListFileParser fileParser,
         IFileManager fileManager,
         IWordGeneratorService wordGeneratorService)
     {
-        _archidektService = archidektService;
+        _deckRetrieverFactory = deckRetrieverFactory;
         _scryfallService = scryfallService;
         _fileParser = fileParser;
         _fileManager = fileManager;
@@ -99,13 +100,13 @@ public class MagicProxyPrinter : IMagicProxyPrinter
         bool printAllTokens = false,
         bool saveImages = false)
     {
-        var retrieveIdFromUrl = _archidektService.TryExtractDeckIdFromUrl(deckUrl, out int deckId);
-        if (!retrieveIdFromUrl)
+        var deckRetriever = _deckRetrieverFactory.GetDeckRetriever(deckUrl);
+        if (deckRetriever is null)
         {
-            RaiseError("Error in extracting deck ID from URL");
+            RaiseError("Not able to find deck online");
             return;
         }
-        var deck = await _archidektService.GetDeckOnline(deckId);
+        var deck = await deckRetriever.RetrieveDeckFromWeb(deckUrl);
         if (deck is null)
         {
             RaiseError("Getting deck details returned error");

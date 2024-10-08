@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 
 using Domain.Clients;
+using Domain.Factories;
 using Domain.Models.DTO;
 using Domain.Models.DTO.Archidekt;
 
@@ -10,15 +11,8 @@ namespace Domain.Services;
 /// <summary>
 /// Represents a service for interacting with Archidekt.
 /// </summary>
-public interface IArchidektService
+public interface IArchidektService : IDeckRetriever
 {
-    /// <summary>
-    /// Retrieves the details of a deck from an online source.
-    /// </summary>
-    /// <param name="deckId">The ID of the deck to retrieve.</param>
-    /// <returns>A task that represents the asynchronous operation. The task result contains the deck details, or null if the deck was not found.</returns>
-    Task<DeckDetailsDTO?> GetDeckOnline(int deckId);
-
     /// <summary>
     /// Tries to extract the deck ID from the given URL.
     /// </summary>
@@ -33,8 +27,10 @@ public class ArchidektService(IArchidektApiClient archidektApiClient, ILogger<Ar
     private readonly IArchidektApiClient _archidektApiClient = archidektApiClient;
     private readonly ILogger<ArchidektService> _logger = logger;
 
-    public async Task<DeckDetailsDTO?> GetDeckOnline(int deckId)
+    public async Task<DeckDetailsDTO?> RetrieveDeckFromWeb(string deckUrl)
     {
+        TryExtractDeckIdFromUrl(deckUrl, out int deckId);
+        
         DeckDetailsDTO? deck = null;
 
         var deckDto = await _archidektApiClient.GetDeck(deckId);
