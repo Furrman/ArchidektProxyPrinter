@@ -13,6 +13,7 @@ public class MagicProxyPrinterTests
     private Mock<IArchidektService> _archidektServiceMock;
     private Mock<IScryfallService> _scryfallServiceMock;
     private Mock<ICardListFileParser> _fileParserMock;
+    private Mock<IFileManager> _fileManagerMock;
     private Mock<IWordGeneratorService> _wordGeneratorServiceMock;
     
     private MagicProxyPrinter _proxyPrinter;
@@ -22,12 +23,14 @@ public class MagicProxyPrinterTests
         _archidektServiceMock = new Mock<IArchidektService>();
         _scryfallServiceMock = new Mock<IScryfallService>();
         _fileParserMock = new Mock<ICardListFileParser>();
+        _fileManagerMock = new Mock<IFileManager>();
         _wordGeneratorServiceMock = new Mock<IWordGeneratorService>();
 
         _proxyPrinter = new MagicProxyPrinter(
             _archidektServiceMock.Object,
             _scryfallServiceMock.Object,
             _fileParserMock.Object,
+            _fileManagerMock.Object,
             _wordGeneratorServiceMock.Object
         );
     }
@@ -36,7 +39,7 @@ public class MagicProxyPrinterTests
     public async Task GenerateWord_WithDeckId_CallsGenerateWordFromDeckOnline()
     {
         // Arrange
-        int deckId = 123;
+        string deckUrl = "https://archidekt.com/decks/123456/test";
         string outputPath = "/path/to/output";
         string outputFileName = "output.docx";
         string languageCode = "en";
@@ -44,14 +47,16 @@ public class MagicProxyPrinterTests
         bool printAllTokens = true;
         bool saveImages = true;
 
-        _archidektServiceMock.Setup(x => x.GetDeckOnline(deckId))
+        _archidektServiceMock.Setup(x => x.TryExtractDeckIdFromUrl(deckUrl, out It.Ref<int>.IsAny))
+            .Returns(true);
+        _archidektServiceMock.Setup(x => x.GetDeckOnline(It.IsAny<int>()))
             .ReturnsAsync(new DeckDetailsDTO());
 
         // Act
-        await _proxyPrinter.GenerateWord(deckId, null, outputPath, outputFileName, languageCode, tokenCopies, printAllTokens, saveImages);
+        await _proxyPrinter.GenerateWord(deckUrl, null, outputPath, outputFileName, languageCode, tokenCopies, printAllTokens, saveImages);
 
         // Assert
-        _archidektServiceMock.Verify(x => x.GetDeckOnline(deckId), Times.Once);
+        _archidektServiceMock.Verify(x => x.GetDeckOnline(It.IsAny<int>()), Times.Once);
         _wordGeneratorServiceMock.Verify(x => x.GenerateWord(It.IsAny<DeckDetailsDTO>(), It.IsAny<string>(), It.IsAny<string>(), saveImages), Times.Once);
     }
 
@@ -67,6 +72,7 @@ public class MagicProxyPrinterTests
         bool printAllTokens = true;
         bool saveImages = true;
 
+        _fileManagerMock.Setup(f => f.FileExists(It.IsAny<string?>())).Returns(true);
         _fileParserMock.Setup(x => x.GetDeckFromFile(inputFilePath))
             .Returns(new DeckDetailsDTO());
 
@@ -83,7 +89,7 @@ public class MagicProxyPrinterTests
     public void GenerateWord_WithInvalidArguments_ThrowsArgumentException()
     {
         // Arrange
-        int? deckId = null;
+        string? deckUrl = null;
         string? inputFilePath = null;
         string outputPath = "/path/to/output";
         string outputFileName = "output.docx";
@@ -92,8 +98,10 @@ public class MagicProxyPrinterTests
         bool printAllTokens = true;
         bool saveImages = true;
 
-        // Act & Assert
-        Func<Task> act = async () => await _proxyPrinter.GenerateWord(deckId, inputFilePath, outputPath, outputFileName, languageCode, tokenCopies, printAllTokens, saveImages);
+        // Act
+        Func<Task> act = async () => await _proxyPrinter.GenerateWord(deckUrl, inputFilePath, outputPath, outputFileName, languageCode, tokenCopies, printAllTokens, saveImages);
+        
+        // Assert
         act.Should().ThrowAsync<ArgumentException>().WithMessage("Wrong input parameters to download deck.");
     }
 }

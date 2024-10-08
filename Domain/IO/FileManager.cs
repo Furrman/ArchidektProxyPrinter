@@ -33,6 +33,13 @@ public interface IFileManager
     bool DirectoryExists(string path);
 
     /// <summary>
+    /// Checks if a file exists at the specified path.
+    /// </summary>
+    /// <param name="path">The path of the file to check.</param>
+    /// <returns></returns>
+    bool FileExists(string path);
+
+    /// <summary>
     /// Gets the filename from the specified path.
     /// </summary>
     /// <param name="path">The path of the file.</param>
@@ -98,6 +105,9 @@ public class FileManager(ILogger<FileManager> logger)
         return Directory.Exists(path);
     }
 
+    
+    public bool FileExists(string path) => Path.Exists(path);
+    
     public string GetFilename(string path) => Path.GetFileNameWithoutExtension(path);
 
     public IEnumerable<string>? GetLinesFromTextFile(string path)

@@ -17,25 +17,25 @@ public interface IMagicProxyPrinter
     /// <summary>
     /// Generates a Word document from the specified deck data.
     /// </summary>
-    /// <param name="deckId">The ID of the deck to generate the document for. If null, the deck will be loaded from the input file path.</param>
+    /// <param name="deckUrl">The url the deck available online to generate the document for. If null, the deck will be loaded from the input file path.</param>
     /// <param name="inputFilePath">The path to the input file containing the deck data. If null, the deck will be loaded from the deck ID.</param>
     /// <param name="outputDirPath">The path to folder for output files. If null, the document will be saved in the default output directory.</param>
     /// <param name="outputFileName">The name of the generated Word document. If null, a default name will be used.</param>
     /// <param name="languageCode">The language code to be used for generating the Word document. If null, the default language code will be used.</param>
     /// <param name="saveImages">Specifies whether to save card images in the document. Default is false.</param>
     /// <returns>A task representing the asynchronous generation process.</returns>
-    Task GenerateWord(int? deckId = null, string? inputFilePath = null, string? outputDirPath = null, string? outputFileName = null, string? languageCode = null, int tokenCopies = 0, bool printAllTokens = false, bool saveImages = false);
+    Task GenerateWord(string? deckUrl = null, string? inputFilePath = null, string? outputDirPath = null, string? outputFileName = null, string? languageCode = null, int tokenCopies = 0, bool printAllTokens = false, bool saveImages = false);
 
     /// <summary>
     /// Generates a Word document from the specified deck ID stored in the internet.
     /// </summary>
-    /// <param name="deckId">The ID of the deck to generate the document for.</param>
+    /// <param name="deckUrl">The url the deck available online to generate the document for. If null, the deck will be loaded from the input file path.</param>
     /// <param name="outputDirPath">The path to folder for output files. If null, the document will be saved in the default output directory.</param>
     /// <param name="outputFileName">The name of the generated Word document. If null, a default name will be used.</param>
     /// <param name="languageCode">The language code to be used for generating the Word document. If null, the default language code will be used.</param>
     /// <param name="saveImages">Specifies whether to save card images in the document. Default is false.</param>
     /// <returns>A task representing the asynchronous generation process.</returns>
-    Task GenerateWordFromDeckOnline(int deckId, string? outputDirPath = null, string? outputFileName = null, string? languageCode = null, int tokenCopies = 0, bool printAllTokens = false, bool saveImages = false);
+    Task GenerateWordFromDeckOnline(string deckUrl, string? outputDirPath = null, string? outputFileName = null, string? languageCode = null, int tokenCopies = 0, bool printAllTokens = false, bool saveImages = false);
 
     /// <summary>
     /// Generates a Word document from the specified deck list file.
@@ -55,17 +55,20 @@ public class MagicProxyPrinter : IMagicProxyPrinter
     private readonly IArchidektService _archidektService;
     private readonly IScryfallService _scryfallService;
     private readonly ICardListFileParser _fileParser;
+    private readonly IFileManager _fileManager;
     private readonly IWordGeneratorService _wordGeneratorService;
 
     public MagicProxyPrinter(
         IArchidektService archidektService,
         IScryfallService scryfallService,
         ICardListFileParser fileParser,
+        IFileManager fileManager,
         IWordGeneratorService wordGeneratorService)
     {
         _archidektService = archidektService;
         _scryfallService = scryfallService;
         _fileParser = fileParser;
+        _fileManager = fileManager;
         _wordGeneratorService = wordGeneratorService;
 
         _scryfallService.GetDeckDetailsProgress += UpdateGetDeckDetails;
@@ -73,7 +76,7 @@ public class MagicProxyPrinter : IMagicProxyPrinter
     }
 
     public async Task GenerateWord(
-        int? deckId = null, 
+        string? deckUrl = null, 
         string? inputFilePath = null, 
         string? outputDirPath = null, 
         string? outputFileName = null,
@@ -82,13 +85,13 @@ public class MagicProxyPrinter : IMagicProxyPrinter
         bool printAllTokens = false,
         bool saveImages = false)
     {
-        if (deckId != null) await GenerateWordFromDeckOnline(deckId!.Value, outputDirPath, outputFileName, languageCode, tokenCopies, printAllTokens, saveImages);
+        if (deckUrl != null) await GenerateWordFromDeckOnline(deckUrl, outputDirPath, outputFileName, languageCode, tokenCopies, printAllTokens, saveImages);
         else if (inputFilePath != null) await GenerateWordFromDeckInFile(inputFilePath, outputDirPath, outputFileName, languageCode, tokenCopies, printAllTokens, saveImages);
         else throw new ArgumentException("Wrong input parameters to download deck.");
     }
 
     public async Task GenerateWordFromDeckOnline(
-        int deckId, 
+        string deckUrl, 
         string? outputDirPath = null, 
         string? outputFileName = null, 
         string? languageCode = null,
@@ -96,6 +99,12 @@ public class MagicProxyPrinter : IMagicProxyPrinter
         bool printAllTokens = false,
         bool saveImages = false)
     {
+        var retrieveIdFromUrl = _archidektService.TryExtractDeckIdFromUrl(deckUrl, out int deckId);
+        if (!retrieveIdFromUrl)
+        {
+            RaiseError("Error in extracting deck ID from URL");
+            return;
+        }
         var deck = await _archidektService.GetDeckOnline(deckId);
         if (deck is null)
         {
@@ -117,6 +126,12 @@ public class MagicProxyPrinter : IMagicProxyPrinter
         bool printAllTokens = false,
         bool saveImages = false)
     {
+        if (!_fileManager.FileExists(deckListFilePath))
+        {
+            RaiseError("You have to specify correct PATH to your card list exported from Archidekt.");
+            return;
+        }
+
         var deck = _fileParser.GetDeckFromFile(deckListFilePath);
         if (deck is null)
         {
