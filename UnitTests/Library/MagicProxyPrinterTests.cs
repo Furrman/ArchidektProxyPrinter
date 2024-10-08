@@ -8,23 +8,23 @@ using Domain.Models.DTO;
 
 namespace UnitTests.Domain;
 
-public class MTGProxyPrinterTests
+public class MagicProxyPrinterTests
 {
     private Mock<IArchidektService> _archidektServiceMock;
     private Mock<IScryfallService> _scryfallServiceMock;
     private Mock<ICardListFileParser> _fileParserMock;
     private Mock<IWordGeneratorService> _wordGeneratorServiceMock;
     
-    private MTGProxyPrinter _proxyPrinter;
+    private MagicProxyPrinter _proxyPrinter;
 
-    public MTGProxyPrinterTests()
+    public MagicProxyPrinterTests()
     {
         _archidektServiceMock = new Mock<IArchidektService>();
         _scryfallServiceMock = new Mock<IScryfallService>();
         _fileParserMock = new Mock<ICardListFileParser>();
         _wordGeneratorServiceMock = new Mock<IWordGeneratorService>();
 
-        _proxyPrinter = new MTGProxyPrinter(
+        _proxyPrinter = new MagicProxyPrinter(
             _archidektServiceMock.Object,
             _scryfallServiceMock.Object,
             _fileParserMock.Object,

@@ -11,7 +11,7 @@ public static class Setup
     public static IServiceCollection SetupLibraryClasses(this IServiceCollection services)
     {
         return services
-            .AddScoped<IMTGProxyPrinter, MTGProxyPrinter>()
+            .AddScoped<IMagicProxyPrinter, MagicProxyPrinter>()
             // Clients
             .AddScoped<IArchidektApiClient, ArchidektApiClient>()
             .AddScoped<IScryfallApiClient, ScryfallApiClient>()

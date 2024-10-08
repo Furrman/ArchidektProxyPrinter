@@ -7,7 +7,7 @@ namespace Domain;
 /// <summary>
 /// Represents a printer for generating Word documents from Archidekt deck data.
 /// </summary>
-public interface IMTGProxyPrinter
+public interface IMagicProxyPrinter
 {
     /// <summary>
     /// Event that is raised to provide progress updates during the generation process.
@@ -48,7 +48,7 @@ public interface IMTGProxyPrinter
     Task GenerateWordFromDeckInFile(string deckListFilePath, string? outputDirPath = null, string? outputFileName = null, string? languageCode = null, int tokenCopies = 0, bool printAllTokens = false, bool saveImages = false);
 }
 
-public class MTGProxyPrinter : IMTGProxyPrinter
+public class MagicProxyPrinter : IMagicProxyPrinter
 {
     public event EventHandler<UpdateProgressEventArgs>? ProgressUpdate;
 
@@ -57,7 +57,7 @@ public class MTGProxyPrinter : IMTGProxyPrinter
     private readonly ICardListFileParser _fileParser;
     private readonly IWordGeneratorService _wordGeneratorService;
 
-    public MTGProxyPrinter(
+    public MagicProxyPrinter(
         IArchidektService archidektService,
         IScryfallService scryfallService,
         ICardListFileParser fileParser,

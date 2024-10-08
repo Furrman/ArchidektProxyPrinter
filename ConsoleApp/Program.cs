@@ -3,11 +3,12 @@
 using CoconoaApp = Cocona.CoconaLiteApp;
 using CoconoaOptions = Cocona.OptionAttribute;
 
-using ConsoleApp.Configuration;
-using ConsoleApp.Helpers;
 using Domain;
 using Domain.Services;
 using Domain.Models.Events;
+
+using ConsoleApp.Configuration;
+using ConsoleApp.Helpers;
 
 namespace ConsoleApp;
 
@@ -81,7 +82,7 @@ internal class Program
                 return;
             }
 
-            var archidektPrinter = serviceProvider.GetService<IMTGProxyPrinter>()!;
+            var archidektPrinter = serviceProvider.GetService<IMagicProxyPrinter>()!;
             archidektPrinter.ProgressUpdate += UpdateProgressOnConsole;
             archidektPrinter.GenerateWord(deckId, 
                 deckFilePath, 
