@@ -6,6 +6,7 @@ using Domain.Models.Events;
 using Domain.Models.DTO.Scryfall;
 using Domain.Constants;
 using Domain.Helpers;
+using Domain.IO;
 
 namespace Domain.Services;
 
@@ -38,12 +39,15 @@ public interface IScryfallService
     Task UpdateCardImageLinks(List<CardEntryDTO> cards, string? languageCode = null, int tokenCopies = 0, bool printAllTokens = false);
 }
 
-public class ScryfallService(IScryfallApiClient scryfallApiClient, ILogger<ScryfallService> logger) 
+public class ScryfallService(IScryfallApiClient scryfallApiClient, 
+    IFileManager fileManager,
+    ILogger<ScryfallService> logger) 
     : IScryfallService
 {
     public event EventHandler<GetDeckDetailsProgressEventArgs>? GetDeckDetailsProgress;
 
     private readonly IScryfallApiClient _scryfallApiClient = scryfallApiClient;
+    private readonly IFileManager _fileManager = fileManager;
     private readonly ILogger<ScryfallService> _logger = logger;
 
 
@@ -58,8 +62,7 @@ public class ScryfallService(IScryfallApiClient scryfallApiClient, ILogger<Scryf
                 return;
             }
 
-            var filePath = Path.Combine(folderPath, $"{quantity}_{filename.Replace(" // ", "-")}.jpg");
-            await File.WriteAllBytesAsync(filePath, imageBytes);
+            await _fileManager.CreateImageFile(imageBytes, folderPath, $"{quantity}_{filename.Replace(" // ", "-")}.jpg");
         }
         catch (Exception ex)
         {

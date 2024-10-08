@@ -6,7 +6,7 @@ using Domain.Services;
 namespace Domain;
 
 /// <summary>
-/// Represents a printer for generating Word documents from Archidekt deck data.
+/// Facade that provides a simplified interface for generating Magic: The Gathering proxy cards.
 /// </summary>
 public interface IMagicProxyPrinter
 {

@@ -78,7 +78,7 @@ public class ArchidektService(IArchidektApiClient archidektApiClient, ILogger<Ar
         foreach (var card in cardList)
         {
             var cardName = card.Card?.OracleCard?.Name;
-            if (cardName is null || card.Quantity <= 0)
+            if (string.IsNullOrEmpty(cardName) || card.Quantity <= 0)
             {
                 continue;
             }

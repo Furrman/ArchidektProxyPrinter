@@ -17,7 +17,8 @@ public interface ILanguageService
     bool IsValidLanguage(string? languageCode);
 
     /// <summary>
-    /// Gets the available languages.
+    /// Gets the available languages in the application.
+    /// It is taken from Scryfall API documentation to access cards in a specific language.
     /// </summary>
     string AvailableLanguages { get; }
 }

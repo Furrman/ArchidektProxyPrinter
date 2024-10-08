@@ -89,4 +89,92 @@ public class ArchidektServiceTests
         // Assert
         result.Should().BeNull();
     }
+
+    [Fact]
+    public async Task RetrieveDeckFromWeb_WithEmptyName_ShouldBeIgnored()
+    {
+        // Arrange
+        string deckUrl = "https://archidekt.com/decks/123456/test";
+        var deckDto = new DeckDTO("", [new DeckCardDTO(new CardDTO(new OracleCardDTO(string.Empty), null), 1)]);
+
+        _archidektApiClientMock.Setup(mock => mock.GetDeck(It.IsAny<int>())).ReturnsAsync(deckDto);
+
+        // Act
+        var result = await _service.RetrieveDeckFromWeb(deckUrl);
+
+        // Assert
+        result.Should().NotBeNull();
+        result!.Cards.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task RetrieveDeckFromWeb_WithQuantity0_ShouldBeIgnored()
+    {
+        // Arrange
+        string deckUrl = "https://archidekt.com/decks/123456/test";
+        var deckDto = new DeckDTO("", [new DeckCardDTO(new CardDTO(new OracleCardDTO("Test"), null), 0)]);
+
+        _archidektApiClientMock.Setup(mock => mock.GetDeck(It.IsAny<int>())).ReturnsAsync(deckDto);
+
+        // Act
+        var result = await _service.RetrieveDeckFromWeb(deckUrl);
+
+        // Assert
+        result.Should().NotBeNull();
+        result!.Cards.Should().BeEmpty();
+    }
+    
+    [Fact]
+    public async Task RetrieveDeckFromWeb_WithArtSeriesTextInLayout_ShouldBeMarkedAsArt()
+    {
+        // Arrange
+        string deckUrl = "https://archidekt.com/decks/123456/test";
+        var deckDto = new DeckDTO("", [new DeckCardDTO(new CardDTO(new OracleCardDTO("Test", "art_series"), null), 1)]);
+
+        _archidektApiClientMock.Setup(mock => mock.GetDeck(It.IsAny<int>())).ReturnsAsync(deckDto);
+
+        // Act
+        var result = await _service.RetrieveDeckFromWeb(deckUrl);
+
+        // Assert
+        result.Should().NotBeNull();
+        result!.Cards.Should().HaveCount(1);
+        result.Cards[0].Art.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task RetrieveDeckFromWeb_WithEtchedInCardModifier_ShouldBeMarkedAsEtched()
+    {
+        // Arrange
+        string deckUrl = "https://archidekt.com/decks/123456/test";
+        var deckDto = new DeckDTO("", [new DeckCardDTO(new CardDTO(new OracleCardDTO("Test"), null), 1, "Etched")]);
+
+        _archidektApiClientMock.Setup(mock => mock.GetDeck(It.IsAny<int>())).ReturnsAsync(deckDto);
+
+        // Act
+        var result = await _service.RetrieveDeckFromWeb(deckUrl);
+
+        // Assert
+        result.Should().NotBeNull();
+        result!.Cards.Should().HaveCount(1);
+        result.Cards[0].Etched.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task RetrieveDeckFromWeb_WithFoilInCardModifier_ShouldBeMarkedAsFoil()
+    {
+        // Arrange
+        string deckUrl = "https://archidekt.com/decks/123456/test";
+        var deckDto = new DeckDTO("", [new DeckCardDTO(new CardDTO(new OracleCardDTO("Test"), null), 1, "Foil")]);
+
+        _archidektApiClientMock.Setup(mock => mock.GetDeck(It.IsAny<int>())).ReturnsAsync(deckDto);
+
+        // Act
+        var result = await _service.RetrieveDeckFromWeb(deckUrl);
+
+        // Assert
+        result.Should().NotBeNull();
+        result!.Cards.Should().HaveCount(1);
+        result.Cards[0].Foil.Should().BeTrue();
+    }
 }

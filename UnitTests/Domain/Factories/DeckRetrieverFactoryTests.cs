@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Moq;
 
 using Domain.Factories;
@@ -33,8 +34,8 @@ public class DeckRetrieverFactoryTests
 
         // Assert
         _archidektServiceMock.Verify(x => x.TryExtractDeckIdFromUrl(It.IsAny<string>(), out It.Ref<int>.IsAny), Times.Once);
-        Assert.NotNull(deckRetriever);
-        Assert.Equal(_archidektServiceMock.Object, deckRetriever);
+        deckRetriever.Should().NotBeNull();
+        deckRetriever.Should().Be(_archidektServiceMock.Object);
     }
 
     [Fact]
@@ -51,6 +52,6 @@ public class DeckRetrieverFactoryTests
 
         // Assert
         _archidektServiceMock.Verify(x => x.TryExtractDeckIdFromUrl(It.IsAny<string>(), out It.Ref<int>.IsAny), Times.Once);
-        Assert.Null(deckRetriever);
+        deckRetriever.Should().BeNull();
     }
 }
