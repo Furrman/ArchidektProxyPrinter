@@ -7,15 +7,15 @@ using Domain.Services;
 
 namespace Domain.DependencyInjection;
 
-public static class Setup
+public static class ServicesRegistration
 {
-    public static IServiceCollection SetupLibraryClasses(this IServiceCollection services)
+    public static IServiceCollection RegisterDomainClasses(this IServiceCollection services)
     {
         return services
             .AddScoped<IMagicProxyPrinter, MagicProxyPrinter>()
             // Clients
-            .AddScoped<IArchidektApiClient, ArchidektApiClient>()
-            .AddScoped<IScryfallApiClient, ScryfallApiClient>()
+            .AddScoped<IArchidektClient, ArchidektClient>()
+            .AddScoped<IScryfallClient, ScryfallApiClient>()
             // Factories
             .AddScoped<IDeckRetrieverFactory, DeckRetrieverFactory>()
             // IO

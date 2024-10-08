@@ -32,13 +32,13 @@ public interface IWordGeneratorService
     Task GenerateWord(DeckDetailsDTO deck, string? wordFileName = null, string? outputFolder = null, bool saveImages = false);
 }
 
-public class WordGeneratorService(ILogger<WordGeneratorService> logger, IScryfallApiClient scryfallClient, IWordDocumentWrapper wordDocumentWrapper, IFileManager fileManager)
+public class WordGeneratorService(ILogger<WordGeneratorService> logger, IScryfallClient scryfallClient, IWordDocumentWrapper wordDocumentWrapper, IFileManager fileManager)
     : IWordGeneratorService
 {
     public event EventHandler<GenerateWordProgressEventArgs>? GenerateWordProgress;
 
     private readonly ILogger<WordGeneratorService> _logger = logger;
-    private readonly IScryfallApiClient _scryfallClient = scryfallClient;
+    private readonly IScryfallClient _scryfallClient = scryfallClient;
     private readonly IWordDocumentWrapper _wordDocumentWrapper = wordDocumentWrapper;
     private readonly IFileManager _fileManager = fileManager;
 

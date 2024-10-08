@@ -22,9 +22,9 @@ public interface IArchidektService : IDeckRetriever
     bool TryExtractDeckIdFromUrl(string url, out int deckId);
 }
 
-public class ArchidektService(IArchidektApiClient archidektApiClient, ILogger<ArchidektService> logger) : IArchidektService
+public class ArchidektService(IArchidektClient archidektApiClient, ILogger<ArchidektService> logger) : IArchidektService
 {
-    private readonly IArchidektApiClient _archidektApiClient = archidektApiClient;
+    private readonly IArchidektClient _archidektApiClient = archidektApiClient;
     private readonly ILogger<ArchidektService> _logger = logger;
 
     public async Task<DeckDetailsDTO?> RetrieveDeckFromWeb(string deckUrl)

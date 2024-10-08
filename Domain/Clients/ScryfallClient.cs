@@ -9,7 +9,7 @@ namespace Domain.Clients;
 /// <summary>
 /// Represents an interface for interacting with the Scryfall API.
 /// </summary>
-public interface IScryfallApiClient
+public interface IScryfallClient
 {
     /// <summary>
     /// Retrieves the image data for a given image URL.
@@ -45,29 +45,16 @@ public interface IScryfallApiClient
     Task<CardSearchDTO?> SearchCard(string cardName, bool includeExtras, bool includeMultilingual);
 }
 
-public class ScryfallApiClient : IScryfallApiClient
+public class ScryfallApiClient(HttpClient httpClient, ILogger<ScryfallApiClient> logger) : IScryfallClient
 {
-    private readonly string _baseUrl = "https://api.scryfall.com";
-    private readonly HttpClient _httpClient;
-    private readonly ILogger<ScryfallApiClient> _logger;
-    private readonly HttpClient _imageDownloadClient;
-
-    public ScryfallApiClient(ILogger<ScryfallApiClient> logger)
-    {
-        _httpClient = new HttpClient
-        {
-            BaseAddress = new Uri(_baseUrl)
-        };
-        _imageDownloadClient = new HttpClient();
-        _logger = logger;
-    }
-
+    private readonly HttpClient _httpClient = httpClient;
+    private readonly ILogger<ScryfallApiClient> _logger = logger;
 
     public async Task<byte[]?> DownloadImage(string imageUrl)
     {
         try
         {
-            return await _imageDownloadClient.GetByteArrayAsync(imageUrl);
+            return await _httpClient.GetByteArrayAsync(imageUrl);
         }
         catch (Exception ex)
         {
@@ -79,7 +66,7 @@ public class ScryfallApiClient : IScryfallApiClient
     public async Task<CardDataDTO?> GetCard(Guid cardId)
     {
         CardDataDTO? cardData = null;
-        var requestUrl = $"/cards/{cardId}";
+        var requestUrl = $"cards/{cardId}";
 
         try
         {
@@ -115,10 +102,10 @@ public class ScryfallApiClient : IScryfallApiClient
             _logger.LogWarning("Missing ExpansionCode and CollectorNumber for the card '{cardName}'", cardName);
             return null;
         }
-        var requestUrl = $"/cards/{expansionCode}/{collectorNumber}";
+        var requestUrl = $"cards/{expansionCode}/{collectorNumber}";
         if (languageCode is not null)
         {
-            requestUrl += $"/{languageCode}";
+            requestUrl += $"{languageCode}";
         }
 
         try
@@ -149,7 +136,7 @@ public class ScryfallApiClient : IScryfallApiClient
     public async Task<CardSearchDTO?> SearchCard(string cardName, bool includeExtras, bool includeMultilingual)
     {
         CardSearchDTO? cardSearch = null;
-        var requestUrl = $"/cards/search?q=${cardName}";
+        var requestUrl = $"cards/search?q=${cardName}";
         if (includeExtras)
         {
             requestUrl += "&unique=prints&include_extras=true&include_variations=true";

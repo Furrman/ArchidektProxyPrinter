@@ -39,14 +39,14 @@ public interface IScryfallService
     Task UpdateCardImageLinks(List<CardEntryDTO> cards, string? languageCode = null, int tokenCopies = 0, bool printAllTokens = false);
 }
 
-public class ScryfallService(IScryfallApiClient scryfallApiClient, 
+public class ScryfallService(IScryfallClient scryfallApiClient, 
     IFileManager fileManager,
     ILogger<ScryfallService> logger) 
     : IScryfallService
 {
     public event EventHandler<GetDeckDetailsProgressEventArgs>? GetDeckDetailsProgress;
 
-    private readonly IScryfallApiClient _scryfallApiClient = scryfallApiClient;
+    private readonly IScryfallClient _scryfallApiClient = scryfallApiClient;
     private readonly IFileManager _fileManager = fileManager;
     private readonly ILogger<ScryfallService> _logger = logger;
 

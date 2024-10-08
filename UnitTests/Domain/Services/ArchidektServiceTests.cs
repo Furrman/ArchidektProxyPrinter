@@ -11,15 +11,15 @@ namespace UnitTests.Domain.Services;
 
 public class ArchidektServiceTests
 {
-    private readonly Mock<IArchidektApiClient> _archidektApiClientMock;
+    private readonly Mock<IArchidektClient> _archidektClientMock;
     private readonly Mock<ILogger<ArchidektService>> _loggerMock;
     private readonly ArchidektService _service;
 
     public ArchidektServiceTests()
     {
-        _archidektApiClientMock = new Mock<IArchidektApiClient>();
+        _archidektClientMock = new Mock<IArchidektClient>();
         _loggerMock = new Mock<ILogger<ArchidektService>>();
-        _service = new ArchidektService(_archidektApiClientMock.Object, _loggerMock.Object);
+        _service = new ArchidektService(_archidektClientMock.Object, _loggerMock.Object);
     }
 
     [Theory]
@@ -60,7 +60,7 @@ public class ArchidektServiceTests
             new DeckCardDTO(new CardDTO(new OracleCardDTO("Card 2"), new EditionDTO()), 3)
         ]);
 
-        _archidektApiClientMock.Setup(mock => mock.GetDeck(It.IsAny<int>())).ReturnsAsync(deckDto);
+        _archidektClientMock.Setup(mock => mock.GetDeck(It.IsAny<int>())).ReturnsAsync(deckDto);
 
         // Act
         var result = await _service.RetrieveDeckFromWeb(deckUrl);
@@ -81,7 +81,7 @@ public class ArchidektServiceTests
         // Arrange
         string deckUrl = "https://archidekt.com/decks/123456/test";
 
-        _archidektApiClientMock.Setup(mock => mock.GetDeck(It.IsAny<int>())).ReturnsAsync((DeckDTO?)null);
+        _archidektClientMock.Setup(mock => mock.GetDeck(It.IsAny<int>())).ReturnsAsync((DeckDTO?)null);
 
         // Act
         var result = await _service.RetrieveDeckFromWeb(deckUrl);
@@ -97,7 +97,7 @@ public class ArchidektServiceTests
         string deckUrl = "https://archidekt.com/decks/123456/test";
         var deckDto = new DeckDTO("", [new DeckCardDTO(new CardDTO(new OracleCardDTO(string.Empty), null), 1)]);
 
-        _archidektApiClientMock.Setup(mock => mock.GetDeck(It.IsAny<int>())).ReturnsAsync(deckDto);
+        _archidektClientMock.Setup(mock => mock.GetDeck(It.IsAny<int>())).ReturnsAsync(deckDto);
 
         // Act
         var result = await _service.RetrieveDeckFromWeb(deckUrl);
@@ -114,7 +114,7 @@ public class ArchidektServiceTests
         string deckUrl = "https://archidekt.com/decks/123456/test";
         var deckDto = new DeckDTO("", [new DeckCardDTO(new CardDTO(new OracleCardDTO("Test"), null), 0)]);
 
-        _archidektApiClientMock.Setup(mock => mock.GetDeck(It.IsAny<int>())).ReturnsAsync(deckDto);
+        _archidektClientMock.Setup(mock => mock.GetDeck(It.IsAny<int>())).ReturnsAsync(deckDto);
 
         // Act
         var result = await _service.RetrieveDeckFromWeb(deckUrl);
@@ -131,7 +131,7 @@ public class ArchidektServiceTests
         string deckUrl = "https://archidekt.com/decks/123456/test";
         var deckDto = new DeckDTO("", [new DeckCardDTO(new CardDTO(new OracleCardDTO("Test", "art_series"), null), 1)]);
 
-        _archidektApiClientMock.Setup(mock => mock.GetDeck(It.IsAny<int>())).ReturnsAsync(deckDto);
+        _archidektClientMock.Setup(mock => mock.GetDeck(It.IsAny<int>())).ReturnsAsync(deckDto);
 
         // Act
         var result = await _service.RetrieveDeckFromWeb(deckUrl);
@@ -149,7 +149,7 @@ public class ArchidektServiceTests
         string deckUrl = "https://archidekt.com/decks/123456/test";
         var deckDto = new DeckDTO("", [new DeckCardDTO(new CardDTO(new OracleCardDTO("Test"), null), 1, "Etched")]);
 
-        _archidektApiClientMock.Setup(mock => mock.GetDeck(It.IsAny<int>())).ReturnsAsync(deckDto);
+        _archidektClientMock.Setup(mock => mock.GetDeck(It.IsAny<int>())).ReturnsAsync(deckDto);
 
         // Act
         var result = await _service.RetrieveDeckFromWeb(deckUrl);
@@ -167,7 +167,7 @@ public class ArchidektServiceTests
         string deckUrl = "https://archidekt.com/decks/123456/test";
         var deckDto = new DeckDTO("", [new DeckCardDTO(new CardDTO(new OracleCardDTO("Test"), null), 1, "Foil")]);
 
-        _archidektApiClientMock.Setup(mock => mock.GetDeck(It.IsAny<int>())).ReturnsAsync(deckDto);
+        _archidektClientMock.Setup(mock => mock.GetDeck(It.IsAny<int>())).ReturnsAsync(deckDto);
 
         // Act
         var result = await _service.RetrieveDeckFromWeb(deckUrl);

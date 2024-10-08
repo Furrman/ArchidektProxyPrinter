@@ -8,7 +8,7 @@ namespace Domain.Clients;
 /// <summary>
 /// Represents an interface for interacting with the Archidekt API.
 /// </summary>
-public interface IArchidektApiClient
+public interface IArchidektClient
 {
     /// <summary>
     /// Retrieves a deck from the Archidekt API based on the specified deck ID.
@@ -18,21 +18,10 @@ public interface IArchidektApiClient
     Task<DeckDTO?> GetDeck(int deckId);
 }
 
-
-public class ArchidektApiClient : IArchidektApiClient
+public class ArchidektClient(HttpClient httpClient, ILogger<ArchidektClient> logger) : IArchidektClient
 {
-    private readonly string _baseUrl = "https://archidekt.com/";
-    private readonly HttpClient _httpClient;
-    private readonly ILogger<ArchidektApiClient> _logger;
-
-    public ArchidektApiClient(ILogger<ArchidektApiClient> logger)
-    {
-        _httpClient = new HttpClient
-        {
-            BaseAddress = new Uri(_baseUrl)
-        };
-        _logger = logger;
-    }
+    private readonly HttpClient _httpClient = httpClient;
+    private readonly ILogger<ArchidektClient> _logger = logger;
 
     public async Task<DeckDTO?> GetDeck(int deckId)
     {

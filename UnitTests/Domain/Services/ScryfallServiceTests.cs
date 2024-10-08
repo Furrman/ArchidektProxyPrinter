@@ -13,17 +13,17 @@ namespace UnitTests.Domain.Services;
 
 public class ScryfallServiceTests
 {
-    private readonly Mock<IScryfallApiClient> _scryfallApiClientMock;
+    private readonly Mock<IScryfallClient> _scryfallClientMock;
     private readonly Mock<IFileManager> _fileManagerMock;
     private readonly Mock<ILogger<ScryfallService>> _loggerMock;
     private readonly ScryfallService _service;
 
     public ScryfallServiceTests()
     {
-        _scryfallApiClientMock = new Mock<IScryfallApiClient>();
+        _scryfallClientMock = new Mock<IScryfallClient>();
         _fileManagerMock = new Mock<IFileManager>();
         _loggerMock = new Mock<ILogger<ScryfallService>>();
-        _service = new ScryfallService(_scryfallApiClientMock.Object, 
+        _service = new ScryfallService(_scryfallClientMock.Object, 
             _fileManagerMock.Object,
             _loggerMock.Object);
     }
@@ -39,13 +39,13 @@ public class ScryfallServiceTests
         var quantity = 1;
         var imageBytes = new byte[] { 0x12, 0x34, 0x56, 0x78 };
 
-        _scryfallApiClientMock.Setup(api => api.DownloadImage(imageUrl)).ReturnsAsync(imageBytes);
+        _scryfallClientMock.Setup(api => api.DownloadImage(imageUrl)).ReturnsAsync(imageBytes);
 
         // Act
         await _service.DownloadCardSideImage(imageUrl, folderPath, filename, quantity);
 
         // Assert
-        _scryfallApiClientMock.Verify(api => api.DownloadImage(imageUrl), Times.Once);
+        _scryfallClientMock.Verify(api => api.DownloadImage(imageUrl), Times.Once);
     }
     
     [Fact]
@@ -58,7 +58,7 @@ public class ScryfallServiceTests
         var quantity = 1;
         var imageBytes = new byte[] { 0x12, 0x34, 0x56, 0x78 };
 
-        _scryfallApiClientMock.Setup(api => api.DownloadImage(imageUrl)).ReturnsAsync(imageBytes);
+        _scryfallClientMock.Setup(api => api.DownloadImage(imageUrl)).ReturnsAsync(imageBytes);
 
         // Act
         await _service.DownloadCardSideImage(imageUrl, folderPath, filename, quantity);
@@ -77,7 +77,7 @@ public class ScryfallServiceTests
         var quantity = 1;
         var imageBytes = null as byte[];
 
-        _scryfallApiClientMock.Setup(api => api.DownloadImage(imageUrl)).ReturnsAsync(imageBytes);
+        _scryfallClientMock.Setup(api => api.DownloadImage(imageUrl)).ReturnsAsync(imageBytes);
 
         // Act
         await _service.DownloadCardSideImage(imageUrl, folderPath, filename, quantity);
@@ -95,7 +95,7 @@ public class ScryfallServiceTests
             new() { Name = "Card 1" }
         ];
 
-        _scryfallApiClientMock.Setup(api => api.SearchCard(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>()))
+        _scryfallClientMock.Setup(api => api.SearchCard(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>()))
             .ReturnsAsync(new CardSearchDTO(
                 [
                     new CardDataDTO { Name = "Card 1", ImageUris = new CardImageUriDTO("https://example.com/card1.jpg")}
@@ -105,7 +105,7 @@ public class ScryfallServiceTests
         await _service.UpdateCardImageLinks(cards);
 
         // Assert
-        _scryfallApiClientMock.Verify(api => api.SearchCard(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>()), Times.Once);
+        _scryfallClientMock.Verify(api => api.SearchCard(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>()), Times.Once);
         cards[0].CardSides.First().ImageUrl.Should().Be("https://example.com/card1.jpg");
     }
 
@@ -118,14 +118,14 @@ public class ScryfallServiceTests
             new() { Name = "Card 1" }
         ];
 
-        _scryfallApiClientMock.Setup(api => api.SearchCard(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>()))
+        _scryfallClientMock.Setup(api => api.SearchCard(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>()))
             .ReturnsAsync((CardSearchDTO?)null);
 
         // Act
         await _service.UpdateCardImageLinks(cards);
 
         // Assert
-        _scryfallApiClientMock.Verify(api => api.SearchCard(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>()), Times.Once);
+        _scryfallClientMock.Verify(api => api.SearchCard(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>()), Times.Once);
         cards[0].CardSides.Should().BeEmpty();
     }
 }

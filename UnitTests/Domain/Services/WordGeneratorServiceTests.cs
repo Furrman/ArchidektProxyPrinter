@@ -12,7 +12,7 @@ namespace UnitTests.Domain.Services;
 public class WordGeneratorServiceTests
 {
     private readonly Mock<ILogger<WordGeneratorService>> _loggerMock;
-    private readonly Mock<IScryfallApiClient> _scryfallClientMock;
+    private readonly Mock<IScryfallClient> _scryfallClientMock;
     private readonly Mock<IWordDocumentWrapper> _wordDocumentWrapperMock;
     private readonly Mock<IFileManager> _fileManagerMock;
     private readonly WordGeneratorService _service;
@@ -20,7 +20,7 @@ public class WordGeneratorServiceTests
     public WordGeneratorServiceTests()
     {
         _loggerMock = new Mock<ILogger<WordGeneratorService>>();
-        _scryfallClientMock = new Mock<IScryfallApiClient>();
+        _scryfallClientMock = new Mock<IScryfallClient>();
         _wordDocumentWrapperMock = new Mock<IWordDocumentWrapper>();
         _fileManagerMock = new Mock<IFileManager>();
 

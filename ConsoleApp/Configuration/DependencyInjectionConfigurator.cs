@@ -9,7 +9,8 @@ internal static class DependencyInjectionConfigurator
     public static IServiceProvider Setup()
     {
         var serviceProvider = new ServiceCollection()
-            .SetupLibraryClasses()
+            .RegisterDomainClasses()
+            .ConfigureHttpClients()
             .SetupNLog()
             .BuildServiceProvider();
 
