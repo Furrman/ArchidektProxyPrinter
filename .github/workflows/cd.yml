@@ -42,7 +42,7 @@ jobs:
         shell: bash
         run: |
           tag=$(git describe --tags --abbrev=0)
-          release_name="ArchidektProxyPrinter-$tag-${{ matrix.target }}"
+          release_name="MagicProxyPrinter-$tag-${{ matrix.target }}"
 
           # Build everything
           dotnet publish ConsoleApp/ConsoleApp.csproj --runtime "${{ matrix.target }}" -c Release -o "$release_name"
@@ -66,7 +66,7 @@ jobs:
       - name: Publish
         uses: softprops/action-gh-release@v1
         with:
-          files: "ArchidektProxyPrinter*"
+          files: "MagicProxyPrinter*"
           tag_name: ${{ github.ref_name || github.event.inputs.tag_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
