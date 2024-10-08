@@ -1,12 +1,12 @@
 using FluentAssertions;
 using Moq;
 
-using Library;
-using Library.IO;
-using Library.Services;
-using Library.Models.DTO;
+using Domain;
+using Domain.IO;
+using Domain.Services;
+using Domain.Models.DTO;
 
-namespace UnitTests.Library;
+namespace UnitTests.Domain;
 
 public class MTGProxyPrinterTests
 {

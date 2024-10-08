@@ -5,9 +5,9 @@ using CoconoaOptions = Cocona.OptionAttribute;
 
 using ConsoleApp.Configuration;
 using ConsoleApp.Helpers;
-using Library;
-using Library.Services;
-using Library.Models.Events;
+using Domain;
+using Domain.Services;
+using Domain.Models.Events;
 
 namespace ConsoleApp;
 

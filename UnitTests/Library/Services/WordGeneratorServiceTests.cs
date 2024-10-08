@@ -2,12 +2,12 @@ using Microsoft.Extensions.Logging;
 
 using Moq;
 
-using Library.Clients;
-using Library.IO;
-using Library.Models.DTO;
-using Library.Services;
+using Domain.Clients;
+using Domain.IO;
+using Domain.Models.DTO;
+using Domain.Services;
 
-namespace UnitTests.Library.Services;
+namespace UnitTests.Domain.Services;
 
 public class WordGeneratorServiceTests
 {

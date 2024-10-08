@@ -1,5 +1,6 @@
-﻿using Library.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
+
+using Domain.DependencyInjection;
 
 namespace ConsoleApp.Configuration;
 

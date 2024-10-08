@@ -3,12 +3,12 @@ using Microsoft.Extensions.Logging;
 using FluentAssertions;
 using Moq;
 
-using Library.Clients;
-using Library.Models.DTO;
-using Library.Models.DTO.Scryfall;
-using Library.Services;
+using Domain.Clients;
+using Domain.Models.DTO;
+using Domain.Models.DTO.Scryfall;
+using Domain.Services;
 
-namespace UnitTests.Library.Services;
+namespace UnitTests.Domain.Services;
 
 public class ScryfallServiceTests
 {

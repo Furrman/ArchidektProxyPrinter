@@ -3,9 +3,9 @@ using Microsoft.Extensions.Logging;
 using FluentAssertions;
 using Moq;
 
-using Library.IO;
+using Domain.IO;
 
-namespace UnitTests.Library.IO;
+namespace UnitTests.Domain.IO;
 
 public class CardListFileParserTest
 {

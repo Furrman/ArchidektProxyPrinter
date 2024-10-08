@@ -1,9 +1,11 @@
 using Microsoft.Extensions.Logging;
+
 using FluentAssertions;
 using Moq;
-using Library.Services;
 
-namespace UnitTests.Library.Services;
+using Domain.Services;
+
+namespace UnitTests.Domain.Services;
 
 public class LanguageServiceTests
 {

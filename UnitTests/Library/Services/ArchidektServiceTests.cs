@@ -3,11 +3,11 @@ using Microsoft.Extensions.Logging;
 using FluentAssertions;
 using Moq;
 
-using Library.Clients;
-using Library.Services;
-using Library.Models.DTO.Archidekt;
+using Domain.Clients;
+using Domain.Services;
+using Domain.Models.DTO.Archidekt;
 
-namespace UnitTests.Library.Services;
+namespace UnitTests.Domain.Services;
 
 public class ArchidektServiceTests
 {
