@@ -78,7 +78,7 @@ public class ScryfallService(IScryfallClient scryfallApiClient,
             int step = UpdateStep(0, count);
             foreach (var card in cards)
             {
-                var images = await GetCardImageUrls(card, languageCode: languageCode, tokenCopies: tokenCopies);
+                var images = await GetCardImageUrls(card, languageCode: languageCode, getTokens: tokenCopies > 0);
                 if (images != null)
                 {
                     card.CardSides = images;
@@ -95,84 +95,108 @@ public class ScryfallService(IScryfallClient scryfallApiClient,
     }
 
 
-    private async Task<HashSet<CardSideDTO>?> GetCardImageUrls(CardEntryDTO card, string? languageCode = null, int tokenCopies = 0)
+    private async Task<HashSet<CardSideDTO>?> GetCardImageUrls(CardEntryDTO card, string? languageCode = null, bool getTokens = false)
     {
-        var searchedCard = await SearchCard(card, languageCode);
+        var scryfallCardData = await SearchCard(card, languageCode);
         // If card was not found, try to search it without language code
-        if (searchedCard is null && languageCode is not null)
+        if (scryfallCardData is null && languageCode is not null)
         {
             _logger.LogWarning("Card {Name} in [{languageCode}] was not found in the Scryfall database", card.Name, languageCode);
-            searchedCard = await SearchCard(card);
+            scryfallCardData = await SearchCard(card);
         }
-        if (searchedCard is null)
+        if (scryfallCardData is null)
         {
             _logger.LogError("Card {Name} was not found in the Scryfall database and will be ignored", card.Name);
             return null;
         }
 
-        HashSet<CardSideDTO> cardSides = [];
+        HashSet<CardSideDTO>? cardSides;
 
-        // The order matters!!!
-        // TODO: Refactor this to not be so dependent on the order
+        if (IsDualSideCard(scryfallCardData))
+        {
+            cardSides = GetDualSideCardLinks(card, scryfallCardData);
+        }
+        else
+        {
+            cardSides = GetSingleSideCardLink(scryfallCardData);
+        }
 
-        HandleDualSideCards(searchedCard, cardSides);
+        if (getTokens)
+        {
+            AddRelatedTokensToCardImages(card, scryfallCardData);
+        }
 
-        HandleArtCards(card, cardSides);
+        return cardSides;
+    }
 
-        HandleSingleSideCards(card, searchedCard, cardSides);
+    private async Task<CardDataDTO?> SearchCard(CardEntryDTO card, string? languageCode = null)
+    {
+        // Check if we have enough details about specific card for a Find instead of Search
+        var cardSearch = card.ExpansionCode != null && card.CollectorNumber != null
+            ? new([await _scryfallApiClient.FindCard(card.Name, card.ExpansionCode, card.CollectorNumber, languageCode)])
+            : await _scryfallApiClient.SearchCard(card.Name, card.ExpansionCode is not null || card.Etched || card.Art, languageCode != null);
 
-        HandleRelatedTokens(card, searchedCard, tokenCopies);
+        // Look for searched card in the search result
+        var searchedCard = cardSearch?.Data?.FirstOrDefault(c =>
+            c != null && c.Name != null && c.Name.Equals(card.Name, StringComparison.OrdinalIgnoreCase) // Find by name
+            && ((!card.Etched) || (card.Etched && c.TcgPlayerEtchedId is not null)) // Find etched frame if required
+            && ((card.ExpansionCode is null) || string.Equals(card.ExpansionCode, c.Set)) // Find by expansion if required
+            && ((languageCode is null) || c.Lang!.Equals(languageCode, StringComparison.OrdinalIgnoreCase)) // Find by expansion if required
+            );
+        return searchedCard;
+    }
+    
+
+    private bool IsArtCard(CardEntryDTO deckCard) => deckCard.Art;
+
+    private bool IsDualSideCard(CardDataDTO scryfallCardData) => scryfallCardData.CardFaces is not null;
+
+    private HashSet<CardSideDTO>? GetDualSideCardLinks(CardEntryDTO deckCard, CardDataDTO scryfallCardData)
+    {
+        if (IsArtCard(deckCard))
+        {
+            return GetArtSideOnlyCardLink(scryfallCardData);
+        }
+
+        var cardSides = new HashSet<CardSideDTO>();
+
+        foreach (var cardFace in scryfallCardData.CardFaces!)
+        {
+            if (cardFace.ImageUriData is null)
+            {
+                continue;
+            }
+
+            cardSides.Add(new CardSideDTO { Name = cardFace.Name ?? string.Empty, ImageUrl = cardFace.ImageUriData?.Large ?? string.Empty });
+        }
 
         return cardSides;
     }
     
-    private void HandleArtCards(CardEntryDTO card, HashSet<CardSideDTO> cardSides)
+    private HashSet<CardSideDTO> GetArtSideOnlyCardLink(CardDataDTO scryfallCardData)
     {
-        var nameSplit = card.Name.Split(" // ");
-        if ((card.Art ||
-            (nameSplit.Length > 1 && nameSplit[0] == nameSplit[1]))
-            && cardSides.Count > 0)
+        var cardSides = new HashSet<CardSideDTO>
         {
-            var first = cardSides.First();
-            cardSides.Clear();
-            cardSides.Add(first);
-        }
+            new() { Name = scryfallCardData.Name ?? string.Empty, ImageUrl = scryfallCardData.CardFaces?.FirstOrDefault()?.ImageUriData?.Large ?? string.Empty }
+        };
+        return cardSides;
     }
 
-    private void HandleDualSideCards(CardDataDTO searchedCard, HashSet<CardSideDTO> cardSides)
+    private HashSet<CardSideDTO>? GetSingleSideCardLink(CardDataDTO scryfallCardData)
     {
-        if (searchedCard.CardFaces is not null)
+        var cardSides = new HashSet<CardSideDTO>();
+        if (scryfallCardData.ImageUriData?.Large is null)
         {
-            foreach (var cardFace in searchedCard.CardFaces)
-            {
-                if (cardFace.ImageUris is null)
-                {
-                    continue;
-                }
-
-                cardSides.Add(new CardSideDTO { Name = cardFace.Name ?? string.Empty, ImageUrl = cardFace.ImageUris?.Large ?? string.Empty });
-            }
+            _logger.LogError("Card {Name} does not have any url to its picture", scryfallCardData.Name);
+            return null;
         }
+
+        cardSides.Add(new CardSideDTO { Name = scryfallCardData.Name ?? string.Empty, ImageUrl = scryfallCardData.ImageUriData.Large });
+        return cardSides;
     }
 
-    private void HandleSingleSideCards(CardEntryDTO card, CardDataDTO searchedCard, HashSet<CardSideDTO> cardSides)
+    private void AddRelatedTokensToCardImages(CardEntryDTO card, CardDataDTO searchedCard)
     {
-        if (cardSides.Count == 0 || cardSides.Any(i => string.IsNullOrEmpty(i.Name) || string.IsNullOrEmpty(i.ImageUrl)))
-        {
-            cardSides.Clear();
-            if (searchedCard.ImageUris?.Large is null)
-            {
-                _logger.LogError("Card {Name} does not have any url to its picture", card.Name);
-                return;
-            }
-            cardSides.Add(new CardSideDTO { Name = card.Name, ImageUrl = searchedCard.ImageUris.Large });
-        }
-    }
-
-    private void HandleRelatedTokens(CardEntryDTO card, CardDataDTO searchedCard, int tokenCopies)
-    {
-        if (tokenCopies == 0) return;
-
         var allParts = searchedCard!.AllParts?.Where(p => p.Component == ScryfallParts.TOKEN);
         if (allParts is not null)
         {
@@ -187,36 +211,9 @@ public class ScryfallService(IScryfallClient scryfallApiClient,
         }
     }
 
-    private async Task<CardDataDTO?> SearchCard(CardEntryDTO card, string? languageCode = null)
-    {
-        // Check if we have enough details about specific card for a Find instead of Search
-        var cardSearch = card.ExpansionCode != null && card.CollectorNumber != null
-            ? new([await _scryfallApiClient.FindCard(card.Name, card.ExpansionCode, card.CollectorNumber, languageCode)])
-            : await _scryfallApiClient.SearchCard(card.Name, card.ExpansionCode is not null || card.Etched || card.Art, languageCode != null);
-
-        // Look for searched card in the search result
-        var searchedCard = cardSearch?.Data?.FirstOrDefault(c =>
-            c != null && c.Name != null && c.Name.Equals(card.Name, StringComparison.OrdinalIgnoreCase) // Find by name
-            && ((!card.Etched) || (card.Etched && c.TcgplayerEtchedId is not null)) // Find etched frame if required
-            && ((card.ExpansionCode is null) || string.Equals(card.ExpansionCode, c.Set)) // Find by expansion if required
-            && ((languageCode is null) || c.Lang!.Equals(languageCode, StringComparison.OrdinalIgnoreCase)) // Find by expansion if required
-            );
-        return searchedCard;
-    }
-
-    private int UpdateStep(int step, int count)
-    {
-        var percent = (double)step / count * 100;
-        GetDeckDetailsProgress?.Invoke(this, new GetDeckDetailsProgressEventArgs
-        {
-            Percent = percent
-        });
-        return ++step;
-    }
-
     private async Task UpdateTokens(List<CardEntryDTO> cards, int tokenCopies, bool printAllTokens)
     {
-        // Casting to list because of cards being modified
+        // Casting to list, because it is gonna be modified
         var tokens = cards.SelectMany(c => c.Tokens)
             .ToList();
         if (!printAllTokens)
@@ -242,9 +239,20 @@ public class ScryfallService(IScryfallClient scryfallApiClient,
                     Name = token.Name,
                     Quantity = tokenCopies,
                     ExpansionCode = cardToken.Set,
-                    CardSides = [new CardSideDTO { Name = cardToken.Name!, ImageUrl = cardToken.ImageUris?.Large ?? string.Empty }]
+                    CardSides = [new CardSideDTO { Name = cardToken.Name!, ImageUrl = cardToken.ImageUriData?.Large ?? string.Empty }]
                 });
             }
         }
+    }
+
+    
+    private int UpdateStep(int step, int count)
+    {
+        var percent = (double)step / count * 100;
+        GetDeckDetailsProgress?.Invoke(this, new GetDeckDetailsProgressEventArgs
+        {
+            Percent = percent
+        });
+        return ++step;
     }
 }

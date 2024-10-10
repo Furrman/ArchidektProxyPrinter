@@ -1,6 +1,6 @@
 namespace Domain.Constants;
 
-internal class ScryfallParts
+public class ScryfallParts
 {
     public const string TOKEN = "token";
 }
